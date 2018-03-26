@@ -63,7 +63,7 @@ class WaypointUpdater(object):
         :param current_pos:
         :return:
         """
-        # Grab our waypoint and car position variables
+        # Grab the waypoint and car position variables
         x_way = waypoint.pose.pose.position.x
         y_way = waypoint.pose.pose.position.y
         x_car = current_pos.pose.position.x
@@ -110,8 +110,7 @@ class WaypointUpdater(object):
             if x >= 0.00 and orientation_match > 0.707:
                 self.closest_waypoint_idx = i
 
-                # Since the waypoints are sequential
-                # As soon as we find the first waypoint, we populate the rest of the list with the following waypoints
+                # As soon as the first waypoint is found, populate LOOKAHEAD_WPS waypoints into the list sequentially
                 for j in range(LOOKAHEAD_WPS):
                     j_mod = i + j % self.total_waypoints
 
@@ -143,7 +142,6 @@ class WaypointUpdater(object):
         self.total_waypoints = len(self.base_waypoints.waypoints)
         rospy.logdebug("Total waypoints={}".format(self.total_waypoints))
 
-
     def get_closest_waypoint_idx(self, start_idx, pose):
         """
         Find the index of the traffic light starting from start_idx
@@ -166,24 +164,19 @@ class WaypointUpdater(object):
 
         return waypoint_idx
 
-
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
         pass
-
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
         pass
 
-
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
 
-
     def set_waypoint_velocity(self, waypoints, waypoint, velocity):
         waypoints[waypoint].twist.twist.linear.x = velocity
-
 
     def distance(self, waypoints, wp1, wp2):
         dist = 0

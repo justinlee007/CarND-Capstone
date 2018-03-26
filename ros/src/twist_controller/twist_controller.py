@@ -3,20 +3,19 @@ from pid import PID
 from yaw_controller import YawController
 
 GAS_DENSITY = 2.858
-ONE_MPH = 0.44704
 
 
 class Controller(object):
-    def __init__(self, cp):
+    def __init__(self, params):
         self.yaw_controller = YawController(
-            wheel_base=cp.wheel_base,
-            steer_ratio=cp.steer_ratio,
-            min_speed=cp.min_speed,
-            max_lat_accel=cp.max_lat_accel,
-            max_steer_angle=cp.max_steer_angle)
+            wheel_base=params.wheel_base,
+            steer_ratio=params.steer_ratio,
+            min_speed=params.min_speed,
+            max_lat_accel=params.max_lat_accel,
+            max_steer_angle=params.max_steer_angle)
 
-        self.cp = cp
-        self.pid = PID(kp=5, ki=0.5, kd=0.5, mn=cp.decel_limit, mx=cp.accel_limit)
+        self.params = params
+        self.pid = PID(kp=5, ki=0.5, kd=0.5, mn=params.decel_limit, mx=params.accel_limit)
         self.s_lpf = LowPassFilter(tau=3, ts=1)
         self.t_lpf = LowPassFilter(tau=3, ts=1)
 
@@ -24,7 +23,13 @@ class Controller(object):
         self.pid.reset()
 
     def control(self, twist_cmd, current_velocity, del_time):
-
+        """
+        Given an input TwistStamped message, velocity and delay, compute output pose.
+        :param twist_cmd:
+        :param current_velocity:
+        :param del_time:
+        :return: throttle, brake and steering values
+        """
         lin_vel = abs(twist_cmd.twist.linear.x)
         ang_vel = twist_cmd.twist.angular.z
         vel_err = lin_vel - current_velocity.twist.linear.x
@@ -45,10 +50,10 @@ class Controller(object):
             throttle = 0.0
             deceleration = -acceleration
 
-            if deceleration < self.cp.brake_deadband:
+            if deceleration < self.params.brake_deadband:
                 deceleration = 0.0
 
-            brake = deceleration * (self.cp.vehicle_mass + self.cp.fuel_capacity * GAS_DENSITY) * self.cp.wheel_radius
+            brake = deceleration * (
+                    self.params.vehicle_mass + self.params.fuel_capacity * GAS_DENSITY) * self.params.wheel_radius
 
-        # Return throttle, brake, steer
         return throttle, brake, next_steer

@@ -47,8 +47,7 @@ class WaypointUpdater(object):
         self.closest_waypoint_idx = -1
         self.current_pos = None
         self.current_velocity = None
-        # self.max_speed_mps = self.kph2mps(rospy.get_param('~velocity'))
-        self.max_speed_mps = self.kph2mps(40)
+        self.max_speed_mps = self.kph2mps(rospy.get_param('~velocity'))
         rospy.logdebug("Max speed={}mps".format(self.max_speed_mps))
 
         rospy.spin()
@@ -79,8 +78,8 @@ class WaypointUpdater(object):
         y = x_shift * math.sin(0 - theta_car) + y_shift * math.cos(0 - theta_car)
         return x, y, theta_car, theta_waypoint
 
-    def kph2mps(self, velocity_kmph):
-        return (velocity_kmph * 1000.) / (60. * 60.)
+    def kph2mps(self, velocity_kph):
+        return (velocity_kph * 1000.) / (60. * 60.)
 
     def pose_cb(self, msg):
         """

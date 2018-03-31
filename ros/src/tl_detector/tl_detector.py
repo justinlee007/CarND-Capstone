@@ -32,7 +32,11 @@ class TLDetector(object):
         simulator. When testing on the vehicle, the color state will not be available. You'll need to
         rely on the position of the light and the camera image to predict it.
         '''
-        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
+
+        # Queue size = 5 - 7 works best, but still has ~500ms latency
+        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb, queue_size=5)
+
+
         sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
 
         config_string = rospy.get_param("/traffic_light_config")
@@ -60,6 +64,10 @@ class TLDetector(object):
     def traffic_cb(self, msg):
         self.lights = msg.lights
 
+        ### Everything below is for testing purpose only while the classifier is not working
+        light_wp, state = self.process_traffic_lights()
+
+
     def image_cb(self, msg):
         """Identifies red lights in the incoming camera image and publishes the index
             of the waypoint closest to the red light's stop line to /traffic_waypoint
@@ -71,7 +79,7 @@ class TLDetector(object):
         self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()
-
+        # rospy.logwarn("IMG")
         '''
         Publish upcoming red lights at camera frequency.
         Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
@@ -105,13 +113,31 @@ class TLDetector(object):
         min_dist = 0.0
         loc = -1;
         #Run through waypoints & perform distance calculation to find closest waypoint
-        for i, wp in enumerate(self.waypoints):
-            diff_x = pose[i][0] - wp[0]
-            diff_y = pose[i][1] - wp[1]
-            diff_x_sq = pow(diff_x,2)
-            diff_y_sq = pow(diff_y,2)
+
+        # rospy.logwarn(self.waypoints)
+        # Read the documentation about waypoint (Lane) message 
+        # Section 4 in Project description
+
+        if self.waypoints is None:
+            return
+
+        
+        for i, wp in enumerate(self.waypoints.waypoints):
+            wpx = wp.pose.pose.position.x
+            wpy = wp.pose.pose.position.y
+            pose_x = pose.position.x
+            pose_y = pose.position.y
+
+            diff_x = pose_x - wpx
+            diff_y = pose_y - wpy
+            # diff_x_sq = pow(diff_x,2)
+            # diff_y_sq = pow(diff_y,2)
+
             #if temp distance is closer than previous distance, then this is the new closest wp
-            temp_dist = sqrt(diff_x_sq + diff_y_sq)
+            temp_dist = (diff_x**2 + diff_y**2) ** 0.5
+
+            # Unfortunately, Python does not have sqrt() without import math
+            # temp_dist = sqrt(diff_x_sq + diff_y_sq)
             if(loc == -1):
                 #set new distance to beat
                 min_dist = temp_dist
@@ -122,6 +148,8 @@ class TLDetector(object):
                 min_dist = temp_dist
                 #set new closest waypoint
                 loc = i
+
+        #rospy.logwarn(loc)
         return loc
 
     def get_light_state(self, light):
@@ -134,6 +162,7 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
+        rospy.logwarn(light) # I will just leave this here so that we can test when the classifier is ready
         if(not self.has_image):
             self.prev_light_loc = None
             return False
@@ -142,6 +171,23 @@ class TLDetector(object):
 
         #Get classification
         return self.light_classifier.get_classification(cv_image)
+
+    def get_faked_light_state(self, light):
+        '''
+        Get the ground truth light state from the simulator.
+
+        Testing only. Not for production use. 
+        
+        Remove this method after we get a working classifier. Use get_light_state() instead
+
+        Args:
+            light (TrafficLight): light to classify
+
+        Returns:
+            int: ID of traffic light color (specified in styx_msgs/TrafficLight)
+        '''
+
+        return light.state
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -152,6 +198,7 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
+        light_idx = None
         light = None
 
         # List of positions that correspond to the line to stop in front of for a given intersection
@@ -162,28 +209,51 @@ class TLDetector(object):
         # Find the closest visible traffic light (if one exists)
         # Identify what light is closest and in front of the car, based on waypoints
         closest_light_waypoint = -1  #initialize waypoint to behind the vehicle
-	for l, lite in enumerate(self.lights):
+
+        # Check the closest waypoint in this lap
+        for l, lite in enumerate(self.lights):
+
             #Find closest waypoint for nearby light
-            temp_waypoint = self.get_closest_waypoint(lite[0:2])
+            # TypeError: 'TrafficLight' object has no attribute '__getitem__'
+
+            # I am pretty sure that you want to pass in the position of the traffic light
+            temp_waypoint = self.get_closest_waypoint(lite.pose.pose)
+
             #Check if temp_waypoint is in front of the car
             if (temp_waypoint > car_position):
                 #if a closest_light_waypoint hasn't been assigned already then assign
                 if(closest_light_waypoint == -1):
                     closest_light_waypoint = temp_waypoint
                     # Assign properties of newly identified closest light to variable "light"
-                    light = l
+                    light_idx = l
+                    light = lite
                 #Otherwise a closest_light_waypoint has been assigned already, check if this one is closer 
                 elif( temp_waypoint < closest_light_waypoint):
                     closest_light_waypoint =  temp_waypoint
                     # Assign properties of  even closer light to variable "light"
-                    light = l
+                    light_idx = l
+                    light = lite
 
+        # if we cannot find a waypoint, find it in next lap
+        # In this case, the closest one must be the first one if we are driving in counter-clockwise
+        # TODO: What happens if we drive clockwise?
+        if not light:
+            light_idx = 0
+            light = self.lights[0]
+
+
+        rospy.logwarn("{}, {}".format(light_idx, light.state))
         # if we have found a closest light to monitor, then determine the stop line position of this light
         if light:
-            light_wp = get_closest_waypoint(stop_line_positions[light])
+            light_wp = self.get_closest_waypoint(stop_line_positions[light])
             state = self.get_light_state(light)
+
+            state_2 = self.get_faked_light_state(light)
+            # rospy.logwarn(state_2)
             return light_wp, state
-        self.waypoints = None
+
+        # Waypoint callback is only called once per program execution, you should not clear this for each timestep
+        #self.waypoints = None
         return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':

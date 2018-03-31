@@ -86,10 +86,14 @@ class DBWNode(object):
         self.loop()
 
     def dbw_enabled_cb(self, dbw_enabled):
+        # If the dbw_enable data is valid and we can get the status
         try:
             self.dbw_enabled = bool(dbw_enabled.data)
+
+        # If the dbw_enabled data is in a bad format, this will cause a safety hazard that might crash the car.
+        # For safety, we must disable DBW.
         except Exception:
-            self.dbw_enabled = dbw_enabled
+            self.dbw_enabled =  dbw_enabled # Use this just for testing, in practice, use False
 
     def current_velocity_cb(self, current_velocity):
         self.current_velocity = current_velocity

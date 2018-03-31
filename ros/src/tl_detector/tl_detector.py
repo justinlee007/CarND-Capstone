@@ -100,8 +100,29 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        #TODO implement
-        return 0
+        #Calculate the  distance between pose and first waypoint and set as min_dist to beat
+        #Set waypoint that is the closesnt to traffic light as first waypoint
+        min_dist = 0.0
+        loc = -1;
+        #Run through waypoints & perform distance calculation to find closest waypoint
+        for i, wp in enumerate(self.waypoints):
+            diff_x = pose[i][0] - wp[0]
+            diff_y = pose[i][1] - wp[1]
+            diff_x_sq = pow(diff_x,2)
+            diff_y_sq = pow(diff_y,2)
+            #if temp distance is closer than previous distance, then this is the new closest wp
+            temp_dist = sqrt(diff_x_sq + diff_y_sq)
+            if(loc == -1):
+                #set new distance to beat
+                min_dist = temp_dist
+                #set new closest waypoint
+                loc = i
+            elif(temp_dist < min_dist):
+                #set new distance to beat
+                min_dist = temp_dist
+                #set new closest waypoint
+                loc = i
+        return loc
 
     def get_light_state(self, light):
         """Determines the current color of the traffic light
@@ -138,9 +159,28 @@ class TLDetector(object):
         if(self.pose):
             car_position = self.get_closest_waypoint(self.pose.pose)
 
-        #TODO find the closest visible traffic light (if one exists)
+        # Find the closest visible traffic light (if one exists)
+        # Identify what light is closest and in front of the car, based on waypoints
+        closest_light_waypoint = -1  #initialize waypoint to behind the vehicle
+	for l, lite in enumerate(self.lights):
+            #Find closest waypoint for nearby light
+            temp_waypoint = self.get_closest_waypoint(lite[0:2])
+            #Check if temp_waypoint is in front of the car
+            if (temp_waypoint > car_position):
+                #if a closest_light_waypoint hasn't been assigned already then assign
+                if(closest_light_waypoint == -1):
+                    closest_light_waypoint = temp_waypoint
+                    # Assign properties of newly identified closest light to variable "light"
+                    light = l
+                #Otherwise a closest_light_waypoint has been assigned already, check if this one is closer 
+                elif( temp_waypoint < closest_light_waypoint):
+                    closest_light_waypoint =  temp_waypoint
+                    # Assign properties of  even closer light to variable "light"
+                    light = l
 
+        # if we have found a closest light to monitor, then determine the stop line position of this light
         if light:
+            light_wp = get_closest_waypoint(stop_line_positions[light])
             state = self.get_light_state(light)
             return light_wp, state
         self.waypoints = None

@@ -1,0 +1,17 @@
+// traffic light label_map proto
+
+syntax = "proto2";
+
+package tl_protos;
+
+message TrafficLight {
+    // numerical id
+    required int32 id = 1;
+    
+    // traffic light name
+    required string name = 2;    
+}
+
+message TrafficLightMap {
+    repeated TrafficLight item = 1;
+}

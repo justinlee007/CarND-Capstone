@@ -65,7 +65,38 @@ class TLDetector(object):
         self.lights = msg.lights
 
         ### Everything below is for testing purpose only while the classifier is not working
-        light_wp, state = self.process_traffic_lights()
+
+        # Note I break the specification of the function here, see the function itself for more explainations
+        distance, state = self.process_traffic_lights()
+
+        # Assume the car can see traffic lights 30m away
+        if 30 < distance < 60:  # hardcoded Tunable
+
+            '''
+            Publish upcoming red lights at camera frequency.
+            Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
+            of times till we start using it. Otherwise the previous stable state is
+            used.
+            '''
+           
+            # if self.state != state:
+            #     self.state_count = 0
+            #     self.state = state
+
+            # elif self.state_count >= STATE_COUNT_THRESHOLD:
+            #     self.last_state = self.state
+            #     distance = distance if state == 0 else -1
+            #     self.last_wp = distance
+            #     self.upcoming_red_light_pub.publish(Int32(state))
+
+            # else:
+            #     self.state_count += 1
+
+            self.upcoming_red_light_pub.publish(Int32(state))
+
+        # If the traffic light is not in viewing distance
+        else:
+            self.upcoming_red_light_pub.publish(Int32(-1))
 
 
     def image_cb(self, msg):
@@ -251,9 +282,19 @@ class TLDetector(object):
 
             state_2 = self.get_faked_light_state(light)
             # rospy.logwarn(state_2)
+            light_x = light.pose.pose.position.x
+            light_y = light.pose.pose.position.y
 
-            rospy.logwarn("Index of the nearest TL:{}, Current State:{}".format(light_idx, state_2))
-            return light_idx, state_2
+            self_x = self.pose.pose.position.x
+            self_y = self.pose.pose.position.y
+
+            distance = ((light_x - self_x)**2 + (light_y - self_y)**2) ** 0.5
+
+            # rospy.logwarn("Distance to the nearest TL: {}, Current State:{}".format(distance, state_2))
+
+            # TODO: I breaked the specification of the function here for testing
+            # Revert this to what this should do when classifier is working
+            return distance, state_2
 
         # Waypoint callback is only called once per program execution, you should not clear this for each timestep
         #self.waypoints = None

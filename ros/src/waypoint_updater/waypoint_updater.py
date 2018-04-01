@@ -5,6 +5,7 @@ import math
 import rospy
 from geometry_msgs.msg import PoseStamped, TwistStamped, sys
 from styx_msgs.msg import Lane
+from std_msgs.msg import Int32
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -22,7 +23,9 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 50  # Number of waypoints we will publish.
-MAX_ACCEL = 2.0
+MAX_ACCEL = 2.0  
+
+BREAK_ACCEL = 0.1
 
 
 class WaypointUpdater(object):
@@ -34,6 +37,7 @@ class WaypointUpdater(object):
         rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb, queue_size=8)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb, queue_size=8)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=LOOKAHEAD_WPS)
 
@@ -50,6 +54,9 @@ class WaypointUpdater(object):
 
 
         self.max_speed_mps = self.kph2mps(rospy.get_param('~velocity'))
+
+        # Whether we see a red light or not
+        self.red_light = False
 
         # The following speed limit is for testing only
         # self.max_speed_mps = self.kph2mps(150)
@@ -119,8 +126,13 @@ class WaypointUpdater(object):
                     j_mod = i + j % self.total_waypoints
 
                     next_wp = self.base_waypoints.waypoints[j_mod]
-                    next_wp.twist.twist.linear.x = min((self.current_velocity + (j + 1) * MAX_ACCEL),
+
+                    if self.red_light:
+                        next_wp.twist.twist.linear.x = min((self.current_velocity - (j + 1) * BREAK_ACCEL),
                                                        self.max_speed_mps)
+                    else:
+                        next_wp.twist.twist.linear.x = min((self.current_velocity + (j + 1) * MAX_ACCEL),
+                                                        self.max_speed_mps)
                     rospy.logdebug("Next waypoint idx={}, velocity={}".format(j, next_wp.twist.twist.linear.x))
 
                     final_waypoints_list.append(next_wp)
@@ -169,8 +181,20 @@ class WaypointUpdater(object):
         return waypoint_idx
 
     def traffic_cb(self, msg):
+        light_states = {
+            0: "red",
+            1: "yellow",
+            2: "green",
+            -1: "N/A"
+        }
+       
+
         # TODO: Callback for /traffic_waypoint message. Implement
-        pass
+        # rospy.logwarn("See a {}".format(light_states[msg.data]))
+        if msg.data == 0:
+            self.red_light = True
+        else:
+            self.red_light = False
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later

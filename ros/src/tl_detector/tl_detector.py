@@ -242,15 +242,18 @@ class TLDetector(object):
             light = self.lights[0]
 
 
-        rospy.logwarn("{}, {}".format(light_idx, light.state))
+
         # if we have found a closest light to monitor, then determine the stop line position of this light
         if light:
-            light_wp = self.get_closest_waypoint(stop_line_positions[light])
-            state = self.get_light_state(light)
+            ## TODO: Uncomment the following two lines once we have classifier working
+            #light_wp = self.get_closest_waypoint(stop_line_positions[light])
+            #state = self.get_light_state(light)
 
             state_2 = self.get_faked_light_state(light)
             # rospy.logwarn(state_2)
-            return light_wp, state
+
+            rospy.logwarn("Index of the nearest TL:{}, Current State:{}".format(light_idx, state_2))
+            return light_idx, state_2
 
         # Waypoint callback is only called once per program execution, you should not clear this for each timestep
         #self.waypoints = None

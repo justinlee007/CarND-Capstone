@@ -49,8 +49,10 @@ class WaypointUpdater(object):
         self.current_velocity = None
 
 
-        # self.max_speed_mps = self.kph2mps(rospy.get_param('~velocity'))
-        self.max_speed_mps = self.kph2mps(150)
+        self.max_speed_mps = self.kph2mps(rospy.get_param('~velocity'))
+
+        # The following speed limit is for testing only
+        # self.max_speed_mps = self.kph2mps(150)
         rospy.logdebug("Max speed={}mps".format(self.max_speed_mps))
 
         rospy.spin()

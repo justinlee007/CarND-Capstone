@@ -8,6 +8,8 @@ import visualization_utils as vis_util
 
 from styx_msgs.msg import TrafficLight
 
+label_map_path = {}
+
 class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
@@ -16,8 +18,8 @@ class TLClassifier(object):
 
         cwd = os.path.dirname(os.path.realpath(__file__))
 
-        model_path = os.path.join(cwd, 'train_model/frozen_inference_graph_sim_data.pb')
-        label_map_path = os.path.join(cwd, 'train_model/tl_label_map_sim_data.pbtxt')
+        model_path = os.path.join(cwd, 'train_model/frozen_inference_graph.pb')
+        #label_map_path = os.path.join(cwd, 'train_model/tl_label_map.pbtxt')
 
         # load frozen tensorflow model
         self.detection_graph = tf.Graph()
@@ -29,10 +31,11 @@ class TLClassifier(object):
                 tf.import_graph_def(od_graph_def, name='')
 
         # load label map
-        label_map = label_map_util.load_labelmap(label_map_path)
-        categories = label_map_util.convert_label_map_to_categories(label_map, \
-            max_num_classes=NUM_CLASSES, use_display_name=True)
-        self.category_index = label_map_util.create_category_index(categories)
+        #label_map = label_map_util.load_labelmap(label_map_path)
+        #categories = label_map_util.convert_label_map_to_categories(label_map, \
+        #    max_num_classes=3, use_display_name=True)
+        #self.category_index = label_map_util.create_category_index(categories)
+        self.category_index = {1: {'id':1, 'name': 'yellow'}, 2: {'id':2, 'name':'red'}, 3: {'id':3, 'name':'green'}}
 
         # create tensorflow session for detection
         # https://github.com/tensorflow/tensorflow/issues/6698

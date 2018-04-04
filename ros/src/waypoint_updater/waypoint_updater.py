@@ -4,7 +4,7 @@ import math
 
 import rospy
 from geometry_msgs.msg import PoseStamped, TwistStamped, sys
-from styx_msgs.msg import Lane
+from styx_msgs.msg import Lane, TrafficLightArray, TrafficLight
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -22,7 +22,12 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 50  # Number of waypoints we will publish.
+STOP_LIGHT_MARGIN = 30.0  # Distance in waypoints between the stop line and the stop light
 MAX_ACCEL = 2.0
+
+# Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
+# False for Model Prediction Traffic Data
+TEST_MODE_ENABLED = True
 
 
 class WaypointUpdater(object):
@@ -35,6 +40,8 @@ class WaypointUpdater(object):
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
+        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb, queue_size=2)
+
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=LOOKAHEAD_WPS)
 
         # TODO: Add other member variables you need below
@@ -42,6 +49,11 @@ class WaypointUpdater(object):
         # Node-wide variables
         self.base_waypoints = None
         self.total_waypoints = 0
+
+        # A boolean to indicate that there is a red stop light ahead
+        self.red_stop_light_ahead = True
+        # The index of the waypoint of the red stop light
+        self.red_stop_light_waypoint_idx = -1
 
         # The index of the closest waypoint to the car
         self.closest_waypoint_idx = -1
@@ -109,13 +121,49 @@ class WaypointUpdater(object):
             if x >= 0.00 and orientation_match > 0.707:
                 self.closest_waypoint_idx = i
 
+                decel = 0.0
+                if self.red_stop_light_ahead:
+                    dist_to_stop_line = self.distance(self.base_waypoints.waypoints, self.closest_waypoint_idx,
+                                                      self.red_stop_light_waypoint_idx) - STOP_LIGHT_MARGIN
+                    if dist_to_stop_line > 0:
+                        # deceleration = (final_v^2 - curr_v^2) / (2 * distance)
+                        decel = (0 - pow(self.current_velocity, 2)) / (2 * dist_to_stop_line)
+                    else:
+                        decel = -3.0
+
                 # As soon as the first waypoint is found, populate LOOKAHEAD_WPS waypoints into the list sequentially
                 for j in range(LOOKAHEAD_WPS):
                     j_mod = i + j % self.total_waypoints
 
                     next_wp = self.base_waypoints.waypoints[j_mod]
-                    next_wp.twist.twist.linear.x = min((self.current_velocity + (j + 1) * MAX_ACCEL),
-                                                       self.max_speed_mps)
+
+                    if self.red_stop_light_ahead:
+                        rospy.logdebug("Stop light idx={}, closest idx={}, diff={}, dist_to_stop_line={}".format(
+                            self.red_stop_light_waypoint_idx, self.closest_waypoint_idx,
+                            self.red_stop_light_waypoint_idx - self.closest_waypoint_idx, dist_to_stop_line))
+                        if 0 < dist_to_stop_line <= (STOP_LIGHT_MARGIN * 2):
+                            if self.current_velocity < 0.1:
+                                target_velocity = 0.0
+                            else:
+                                if 0 < dist_to_stop_line <= (STOP_LIGHT_MARGIN / 2):
+                                    target_velocity = self.current_velocity * min(1, (
+                                            dist_to_stop_line / (STOP_LIGHT_MARGIN / 2)))
+                                else:
+                                    target_velocity = min(math.sqrt((- (2 * decel * dist_to_stop_line))) - (j * 0.1),
+                                                          self.max_speed_mps)
+                                if target_velocity < 0.1:
+                                    target_velocity = 0.
+                            rospy.logdebug(
+                                "Current velocity={}, Target velocity={}".format(self.current_velocity,
+                                                                                 target_velocity))
+                            next_wp.twist.twist.linear.x = target_velocity
+                        else:
+                            next_wp.twist.twist.linear.x = min(self.current_velocity + ((j + 1) * MAX_ACCEL),
+                                                               self.max_speed_mps)
+                    else:
+                        next_wp.twist.twist.linear.x = min((self.current_velocity + (j + 1) * MAX_ACCEL),
+                                                           self.max_speed_mps)
+
                     rospy.logdebug("Next waypoint idx={}, velocity={}".format(j, next_wp.twist.twist.linear.x))
 
                     final_waypoints_list.append(next_wp)
@@ -155,7 +203,7 @@ class WaypointUpdater(object):
         for i in range(self.total_waypoints):
             waypoint_position = self.base_waypoints.waypoints[(i + start_idx) % self.total_waypoints].pose.pose.position
             tl_position = pose.pose.position
-            dl = lambda a, b: math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
+            dl = lambda a, b: math.sqrt(pow((a.x - b.x), 2) + pow((a.y - b.y), 2))
             dist = dl(waypoint_position, tl_position)
             if dist < closest_dist:
                 waypoint_idx = i
@@ -164,8 +212,33 @@ class WaypointUpdater(object):
         return waypoint_idx
 
     def traffic_cb(self, msg):
-        # TODO: Callback for /traffic_waypoint message. Implement
-        pass
+        if self.current_velocity is None or self.current_pos is None or self.base_waypoints is None:
+            return
+
+        # For testing purpose we are subscribing to the /vehicle/traffic_lights
+        traffic_lights = msg.lights
+        closest_tl = None
+        closest_dist = sys.maxint  # Some big number
+
+        if TEST_MODE_ENABLED:
+            for i in range(len(traffic_lights)):
+                tl = msg.lights[i]
+                if tl.state == TrafficLight.RED or tl.state == TrafficLight.YELLOW:  # Red or Yellow Traffic light
+                    # Convert traffic light location to car local coordinates
+                    x, y, theta_car, theta_tl = self.convert_local(tl, self.current_pos)
+                    dl = lambda a, b: math.sqrt(pow((a.x - b.x), 2) + pow((a.y - b.y), 2))
+                    dist = dl(tl.pose.pose.position,
+                              self.base_waypoints.waypoints[self.closest_waypoint_idx].pose.pose.position)
+                    if x > 0.0 and 0 < dist < closest_dist:
+                        closest_tl = tl
+                        closest_dist = dist
+
+            if closest_tl is not None:
+                tl_waypoint_idx = self.get_closest_waypoint_idx(0, closest_tl.pose)
+                self.red_stop_light_waypoint_idx = tl_waypoint_idx
+                self.red_stop_light_ahead = True
+            else:
+                self.red_stop_light_ahead = False
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later

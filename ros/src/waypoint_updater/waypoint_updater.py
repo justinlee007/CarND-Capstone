@@ -60,7 +60,7 @@ class WaypointUpdater(object):
         self.current_pos = None
         self.current_velocity = None
         self.max_speed_mps = self.kph2mps(rospy.get_param('~velocity'))
-        rospy.logdebug("Max speed={}mps".format(self.max_speed_mps))
+        rospy.loginfo("Max speed={} mps, TEST_MODE_ENABLED={}".format(self.max_speed_mps, TEST_MODE_ENABLED))
 
         rospy.spin()
 
@@ -138,9 +138,6 @@ class WaypointUpdater(object):
                     next_wp = self.base_waypoints.waypoints[j_mod]
 
                     if self.red_stop_light_ahead:
-                        rospy.logdebug("Stop light idx={}, closest idx={}, diff={}, dist_to_stop_line={}".format(
-                            self.red_stop_light_waypoint_idx, self.closest_waypoint_idx,
-                            self.red_stop_light_waypoint_idx - self.closest_waypoint_idx, dist_to_stop_line))
                         if 0 < dist_to_stop_line <= (STOP_LIGHT_MARGIN * 2):
                             if self.current_velocity < 0.1:
                                 target_velocity = 0.0
@@ -153,9 +150,6 @@ class WaypointUpdater(object):
                                                           self.max_speed_mps)
                                 if target_velocity < 0.1:
                                     target_velocity = 0.
-                            rospy.logdebug(
-                                "Current velocity={}, Target velocity={}".format(self.current_velocity,
-                                                                                 target_velocity))
                             next_wp.twist.twist.linear.x = target_velocity
                         else:
                             next_wp.twist.twist.linear.x = min(self.current_velocity + ((j + 1) * MAX_ACCEL),
@@ -164,9 +158,15 @@ class WaypointUpdater(object):
                         next_wp.twist.twist.linear.x = min((self.current_velocity + (j + 1) * MAX_ACCEL),
                                                            self.max_speed_mps)
 
-                    rospy.logdebug("Next waypoint idx={}, velocity={}".format(j, next_wp.twist.twist.linear.x))
-
                     final_waypoints_list.append(next_wp)
+
+                if self.red_stop_light_ahead:
+                    rospy.logdebug(
+                        "Stop light idx={}, closest idx={}, diff={}, dist_to_stop_line={:.2f} m, decel={:.2f} ms^2".format(
+                            self.red_stop_light_waypoint_idx, self.closest_waypoint_idx,
+                            self.red_stop_light_waypoint_idx - self.closest_waypoint_idx, dist_to_stop_line, decel))
+
+                rospy.logdebug("Current velocity={:.2f} ms".format(self.current_velocity))
                 # Format the message
                 msg = Lane()
                 msg.waypoints = final_waypoints_list
@@ -252,7 +252,7 @@ class WaypointUpdater(object):
 
     def distance(self, waypoints, wp1, wp2):
         dist = 0
-        dl = lambda a, b: math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
+        dl = lambda a, b: math.sqrt(pow((a.x - b.x), 2) + pow((a.y - b.y), 2) + pow((a.z - b.z), 2))
         for i in range(wp1, wp2 + 1):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i

@@ -22,7 +22,7 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 50  # Number of waypoints we will publish.
+LOOKAHEAD_WPS = 200  # Number of waypoints we will publish.
 STOP_LIGHT_MARGIN = 30  # Distance in waypoints between the stop line and the stop light
 STOP_LINE_MARGIN = 3.0  # Distance in meters to pad in front of the stop line
 MIN_BRAKING_DIST = STOP_LIGHT_MARGIN * -0.5  # Keep braking for the stop light through this distance

@@ -24,9 +24,9 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 LOOKAHEAD_WPS = 50  # Number of waypoints we will publish.
 STOP_LIGHT_MARGIN = 30.0  # Distance in waypoints between the stop line and the stop light
 STOP_LINE_MARGIN = 5.0  # Distance to pad in front of the stop line
-MIN_BRAKING_DIST = STOP_LIGHT_MARGIN * 0.5  # Keep braking for the stop light through this distance
+MIN_BRAKING_DIST = STOP_LIGHT_MARGIN * -0.5  # Keep braking for the stop light through this distance
 # TODO: The SAFE_BRAKING_DIST should be derived on dist_to_stop_line AND current_velocity
-SAFE_BRAKING_DIST = STOP_LIGHT_MARGIN * 2  # Distance to start braking for a stop light
+SAFE_BRAKING_DIST = STOP_LIGHT_MARGIN * 2.5  # Distance to start braking for a stop light
 MAX_ACCEL = 2.0
 MAX_DECEL = 3.0
 COAST_VELOCITY = 4.0  # Minimum velocity while coasting up to the light

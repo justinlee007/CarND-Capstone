@@ -46,8 +46,6 @@ class TLClassifier(object):
         self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
         self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
 
-
-
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
 
@@ -60,9 +58,9 @@ class TLClassifier(object):
         """
         #return TrafficLight.RED
         #TODO implement light color prediction
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        (im_width, im_height, _) = image.shape
-        image_np = np.expand_dims(image, axis=0)
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        (im_width, im_height, _) = image_rgb.shape
+        image_np = np.expand_dims(image_rgb, axis=0)
 
         # Actual detection.
         with self.detection_graph.as_default():
@@ -75,37 +73,24 @@ class TLClassifier(object):
         scores = np.squeeze(scores)
         classes = np.squeeze(classes).astype(np.int32)
 
-        # DISTANCE TO TRAFFIC LIGHT and passing to TrafficLight thing
-        # Should be done as part of visual to avoid duplicate computation
-        min_score_thresh = .20
-        count = np.zeros((4,), dtype=np.int)
+
+        min_score_thresh = .01
+        count = 0
+        print(scores)
         
         for i in range(boxes.shape[0]):
             if scores is None or scores[i] > min_score_thresh:
                 class_name = self.category_index[classes[i]]['name']
 
                 # Traffic light thing
-                self.current_light = TrafficLight.UNKNOWN
                 if class_name == 'Red':
-                    count[1] = count[1] + 1
-                    #self.current_light = TrafficLight.RED
-                elif class_name == 'Green':
-                    count[2] = count[2] + 1
-                    #self.current_light = TrafficLight.GREEN
-                elif class_name == 'Yellow':
-                    count[3] = count[3] + 1
-                    #self.current_light = TrafficLight.YELLOW
-                else:                    
-                    count[0] = count[0] + 1
+                    count += 1
 
-        idx = np.argmax(count)
-        if idx==0:
-            self.current_light = TrafficLight.UNKNOWN
-        elif idx==1:
-            self.current_light = TrafficLight.RED
-        elif idx==2:
+        print(count)
+        if count < 5-count:
             self.current_light = TrafficLight.GREEN
         else:
-            self.current_light = TrafficLight.YELLOW
-        
+            self.current_light = TrafficLight.RED
+       
         return self.current_light
+        

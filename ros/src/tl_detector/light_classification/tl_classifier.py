@@ -1,25 +1,21 @@
 import os
 import sys
-from PIL import Image
 
+import cv2
+import numpy as np
 import tensorflow as tf
-import label_map_util
-import visualization_utils as vis_util
 
 from styx_msgs.msg import TrafficLight
 
-label_map_path = {}
 
 class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
-        pass
         self.current_light = TrafficLight.UNKNOWN
 
         cwd = os.path.dirname(os.path.realpath(__file__))
 
         model_path = os.path.join(cwd, 'train_model/frozen_inference_graph.pb')
-        #label_map_path = os.path.join(cwd, 'train_model/tl_label_map.pbtxt')
 
         # load frozen tensorflow model
         self.detection_graph = tf.Graph()
@@ -30,15 +26,9 @@ class TLClassifier(object):
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
 
-        # load label map
-        #label_map = label_map_util.load_labelmap(label_map_path)
-        #categories = label_map_util.convert_label_map_to_categories(label_map, \
-        #    max_num_classes=3, use_display_name=True)
-        #self.category_index = label_map_util.create_category_index(categories)
-        self.category_index = {1: {'id':1, 'name': 'yellow'}, 2: {'id':2, 'name':'red'}, 3: {'id':3, 'name':'green'}}
+        self.category_index = {1: {'id':1, 'name': 'Green'}, 2: {'id':2, 'name':'Red'}, 3: {'id':3, 'name':'Yellow'}, 4:{'id':4, 'name':'off'}}
 
         # create tensorflow session for detection
-        # https://github.com/tensorflow/tensorflow/issues/6698
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         # end
@@ -68,18 +58,18 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
+        #return TrafficLight.RED
         #TODO implement light color prediction
-        image = Image.open(image_path)
-        (im_width, im_height) = image.size
-        image_np = np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
-        image_np_expanded = np.expand_dims(image_np, axis=0)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        (im_width, im_height, _) = image.shape
+        image_np = np.expand_dims(image, axis=0)
 
         # Actual detection.
         with self.detection_graph.as_default():
             (boxes, scores, classes, num) = self.sess.run(
                     [self.detection_boxes, self.detection_scores, 
                     self.detection_classes, self.num_detections],
-                    feed_dict={self.image_tensor: image_np_expanded})
+                    feed_dict={self.image_tensor: image_np})
 
         boxes = np.squeeze(boxes)
         scores = np.squeeze(scores)
@@ -87,44 +77,35 @@ class TLClassifier(object):
 
         # DISTANCE TO TRAFFIC LIGHT and passing to TrafficLight thing
         # Should be done as part of visual to avoid duplicate computation
-        min_score_thresh = .50
+        min_score_thresh = .20
+        count = np.zeros((4,), dtype=np.int)
+        
         for i in range(boxes.shape[0]):
             if scores is None or scores[i] > min_score_thresh:
                 class_name = self.category_index[classes[i]]['name']
-                # class_id = self.category_index[classes[i]]['id']  # if needed
-                print('{}'.format(class_name))
 
                 # Traffic light thing
                 self.current_light = TrafficLight.UNKNOWN
                 if class_name == 'Red':
-                    self.current_light = TrafficLight.RED
+                    count[1] = count[1] + 1
+                    #self.current_light = TrafficLight.RED
                 elif class_name == 'Green':
-                    self.current_light = TrafficLight.GREEN
+                    count[2] = count[2] + 1
+                    #self.current_light = TrafficLight.GREEN
                 elif class_name == 'Yellow':
-                    self.current_light = TrafficLight.YELLOW
+                    count[3] = count[3] + 1
+                    #self.current_light = TrafficLight.YELLOW
+                else:                    
+                    count[0] = count[0] + 1
 
-                fx =  1345.200806
-                fy =  1353.838257
-                perceived_width_x = (boxes[i][3] - boxes[i][1]) * 800
-                perceived_width_y = (boxes[i][2] - boxes[i][0]) * 600
-
-                # ymin, xmin, ymax, xmax = box
-                # depth_prime = (width_real * focal) / perceived_width
-                # traffic light is 4 feet long and 1 foot wide?
-                perceived_depth_x = ((1 * fx) / perceived_width_x)
-                perceived_depth_y = ((3 * fy) / perceived_width_y )
-
-                estimated_distance = round((perceived_depth_x + perceived_depth_y) / 2)
-
-        # Visualization of the results of a detection.
-        vis_util.visualize_boxes_and_labels_on_image_array(
-            image, boxes, classes, scores,
-            self.category_index,
-            use_normalized_coordinates=True,
-            line_thickness=8)
-            
+        idx = np.argmax(count)
+        if idx==0:
+            self.current_light = TrafficLight.UNKNOWN
+        elif idx==1:
+            self.current_light = TrafficLight.RED
+        elif idx==2:
+            self.current_light = TrafficLight.GREEN
+        else:
+            self.current_light = TrafficLight.YELLOW
         
-        # For visualization topic output
-        self.image_np_deep = image
-       
         return self.current_light

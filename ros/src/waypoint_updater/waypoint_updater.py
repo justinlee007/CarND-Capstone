@@ -23,9 +23,14 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 50  # Number of waypoints we will publish.
 STOP_LIGHT_MARGIN = 30.0  # Distance in waypoints between the stop line and the stop light
+STOP_LINE_MARGIN = 5.0  # Distance to pad in front of the stop line
+MIN_BRAKING_DIST = STOP_LIGHT_MARGIN * 0.5  # Keep braking for the stop light through this distance
+# TODO: The SAFE_BRAKING_DIST should be derived on dist_to_stop_line AND current_velocity
+SAFE_BRAKING_DIST = STOP_LIGHT_MARGIN * 2.5  # Distance to start braking for a stop light
 MAX_ACCEL = 2.0
 MAX_DECEL = 3.0
-LOGGING_THROTTLE_FACTOR = 10
+COAST_VELOCITY = 4.0  # Minimum velocity while coasting up to the light
+LOGGING_THROTTLE_FACTOR = 10  # Only log after this many loops
 
 # Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
 # False for Model Prediction Traffic Data
@@ -168,8 +173,10 @@ class WaypointUpdater(object):
                 return
 
     def calculate_target_velocity(self, decel, dist_to_stop_line, j):
-        if self.red_stop_light_ahead and (0 < dist_to_stop_line < (STOP_LIGHT_MARGIN * 3)):
-            target_velocity = min((math.sqrt(-2.0 * decel * dist_to_stop_line) - (j * 0.05)), self.max_speed_mps)
+        if self.red_stop_light_ahead and (MIN_BRAKING_DIST < dist_to_stop_line < SAFE_BRAKING_DIST):
+            coast_velocity = (COAST_VELOCITY, 0.0)[dist_to_stop_line < STOP_LINE_MARGIN]
+            calculated_velocity = math.sqrt(-2.0 * decel * dist_to_stop_line) - (j * 0.1)
+            target_velocity = max(coast_velocity, min(calculated_velocity, self.max_speed_mps))
         else:
             target_velocity = min((self.current_velocity + (j + 1) * MAX_ACCEL), self.max_speed_mps)
         if target_velocity < 0.1:

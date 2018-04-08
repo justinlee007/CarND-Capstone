@@ -24,6 +24,8 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 LOOKAHEAD_WPS = 50  # Number of waypoints we will publish.
 STOP_LIGHT_MARGIN = 30.0  # Distance in waypoints between the stop line and the stop light
 MAX_ACCEL = 2.0
+MAX_DECEL = 3.0
+LOGGING_THROTTLE_FACTOR = 10
 
 # Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
 # False for Model Prediction Traffic Data
@@ -60,7 +62,7 @@ class WaypointUpdater(object):
         self.current_pos = None
         self.current_velocity = None
         self.max_speed_mps = self.kph2mps(rospy.get_param('~velocity'))
-        rospy.loginfo("Max speed={} mps, TEST_MODE_ENABLED={}".format(self.max_speed_mps, TEST_MODE_ENABLED))
+        rospy.loginfo("Max speed={}, TEST_MODE_ENABLED={}".format(self.max_speed_mps, TEST_MODE_ENABLED))
 
         rospy.spin()
 
@@ -121,15 +123,17 @@ class WaypointUpdater(object):
             if x >= 0.00 and orientation_match > 0.707:
                 self.closest_waypoint_idx = i
 
-                decel = 0.0
                 if self.red_stop_light_ahead:
                     dist_to_stop_line = self.distance(self.base_waypoints.waypoints, self.closest_waypoint_idx,
                                                       self.red_stop_light_waypoint_idx) - STOP_LIGHT_MARGIN
-                    if dist_to_stop_line > 0:
-                        # deceleration = (final_v^2 - curr_v^2) / (2 * distance)
-                        decel = (0 - pow(self.current_velocity, 2)) / (2 * dist_to_stop_line)
-                    else:
-                        decel = -3.0
+                    # deceleration = (final_v^2 - curr_v^2) / (2 * distance)
+                    decel = -1 * min((pow(self.current_velocity, 2) / (2 * dist_to_stop_line)), MAX_DECEL)
+                else:
+                    dist_to_stop_line = 0.0
+                    decel = 0.0
+
+                initial_target_velocity = 0.0
+                target_velocity = 0.0
 
                 # As soon as the first waypoint is found, populate LOOKAHEAD_WPS waypoints into the list sequentially
                 for j in range(LOOKAHEAD_WPS):
@@ -137,36 +141,24 @@ class WaypointUpdater(object):
 
                     next_wp = self.base_waypoints.waypoints[j_mod]
 
-                    if self.red_stop_light_ahead:
-                        if 0 < dist_to_stop_line <= (STOP_LIGHT_MARGIN * 2):
-                            if self.current_velocity < 0.1:
-                                target_velocity = 0.0
-                            else:
-                                if 0 < dist_to_stop_line <= (STOP_LIGHT_MARGIN / 2):
-                                    target_velocity = self.current_velocity * min(1, (
-                                            dist_to_stop_line / (STOP_LIGHT_MARGIN / 2)))
-                                else:
-                                    target_velocity = min(math.sqrt((- (2 * decel * dist_to_stop_line))) - (j * 0.1),
-                                                          self.max_speed_mps)
-                                if target_velocity < 0.1:
-                                    target_velocity = 0.
-                            next_wp.twist.twist.linear.x = target_velocity
-                        else:
-                            next_wp.twist.twist.linear.x = min(self.current_velocity + ((j + 1) * MAX_ACCEL),
-                                                               self.max_speed_mps)
-                    else:
-                        next_wp.twist.twist.linear.x = min((self.current_velocity + (j + 1) * MAX_ACCEL),
-                                                           self.max_speed_mps)
-
+                    target_velocity = self.calculate_target_velocity(decel, dist_to_stop_line, j)
+                    if j == 0:
+                        initial_target_velocity = target_velocity
+                    next_wp.twist.twist.linear.x = target_velocity
                     final_waypoints_list.append(next_wp)
 
-                if self.red_stop_light_ahead:
-                    rospy.logdebug(
-                        "Stop light idx={}, closest idx={}, diff={}, dist_to_stop_line={:.2f} m, decel={:.2f} ms^2".format(
-                            self.red_stop_light_waypoint_idx, self.closest_waypoint_idx,
-                            self.red_stop_light_waypoint_idx - self.closest_waypoint_idx, dist_to_stop_line, decel))
+                # Throttle the logging a bit
+                if (i % LOGGING_THROTTLE_FACTOR) == 0:
+                    if self.red_stop_light_ahead:
+                        rospy.logdebug(
+                            "Stop light idx={}, closest idx={}, diff={}, dist_to_stop_line={:.2f}, decel={:.2f}".format(
+                                self.red_stop_light_waypoint_idx, self.closest_waypoint_idx,
+                                self.red_stop_light_waypoint_idx - self.closest_waypoint_idx, dist_to_stop_line, decel))
 
-                rospy.logdebug("Current velocity={:.2f} ms".format(self.current_velocity))
+                    rospy.logdebug(
+                        "Current velocity={:.2f}, target velocity[0]={:.2f}, target velocity[{}]={:.2f}".format(
+                            self.current_velocity, initial_target_velocity, LOOKAHEAD_WPS, target_velocity))
+
                 # Format the message
                 msg = Lane()
                 msg.waypoints = final_waypoints_list
@@ -174,6 +166,15 @@ class WaypointUpdater(object):
                 msg.header = self.current_pos.header
                 self.final_waypoints_pub.publish(msg)
                 return
+
+    def calculate_target_velocity(self, decel, dist_to_stop_line, j):
+        if self.red_stop_light_ahead and (0 < dist_to_stop_line < (STOP_LIGHT_MARGIN * 3)):
+            target_velocity = min((math.sqrt(-2.0 * decel * dist_to_stop_line) - (j * 0.05)), self.max_speed_mps)
+        else:
+            target_velocity = min((self.current_velocity + (j + 1) * MAX_ACCEL), self.max_speed_mps)
+        if target_velocity < 0.1:
+            target_velocity = 0.0
+        return target_velocity
 
     def waypoints_cb(self, waypoints):
         """

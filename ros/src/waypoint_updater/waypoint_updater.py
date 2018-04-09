@@ -2,7 +2,9 @@
 
 import math
 import numpy as np
+
 import rospy
+from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped, TwistStamped, sys
 from scipy.spatial import KDTree
 from styx_msgs.msg import Lane, Waypoint, TrafficLightArray, TrafficLight
@@ -29,7 +31,7 @@ MIN_BRAKING_DIST = STOP_LIGHT_MARGIN * -0.5  # Keep braking for the stop light t
 # TODO: The SAFE_BRAKING_DIST should be derived on dist_to_stop_line AND current_velocity
 SAFE_BRAKING_DIST = STOP_LIGHT_MARGIN * 2.5  # Distance to start braking for a stop light
 MAX_ACCEL = 2.0
-MAX_DECEL = 3.0
+MAX_DECEL = 0.5
 COAST_VELOCITY = 4.0  # Minimum velocity while coasting up to the light
 LOGGING_THROTTLE_FACTOR = 10  # Only log after this many loops
 
@@ -42,47 +44,28 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=2)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb, queue_size=8)
-        rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb, queue_size=8)
-
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-
-        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb, queue_size=2)
-
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=LOOKAHEAD_WPS)
-
         # TODO: Add other member variables you need below
-
-        # Node-wide variables
+        self.base_lane = None
         self.pose = None
-        self.base_waypoints = None
-        self.total_waypoints = 0
+        self.stopline_wp_idx = -1
         self.waypoints_2d = None
         self.waypoint_tree = None
 
-        # A boolean to indicate that there is a red stop light ahead
-        self.red_stop_light_ahead = True
-        # The index of the waypoint of the red stop light
-        self.red_stop_light_waypoint_idx = -1
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
 
-        # The index of the closest waypoint to the car
-        self.closest_waypoint_idx = -1
-        self.current_pos = None
-        self.current_velocity = None
-        self.max_speed_mps = self.kph2mps(rospy.get_param('~velocity'))
-        rospy.loginfo("Max speed={}, TEST_MODE_ENABLED={}".format(self.max_speed_mps, TEST_MODE_ENABLED))
+        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
-        # rospy.spin()
+        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+
         self.loop()
 
     def loop(self):
-        rate = rospy.Rate(50) # Could go all the way down to 30
+        rate = rospy.Rate(50)  # Could go all the way down to 30
         while not rospy.is_shutdown():
-            if self.pose and self.base_waypoints:
-                #Get closest waypoint
-                closest_waypoint_idx = self.get_closest_waypoint_idx()
-                self.publish_waypoints(closest_waypoint_idx)
+            if self.pose and self.base_lane:
+                self.publish_waypoints()
             rate.sleep()
 
     def get_closest_waypoint_idx(self):
@@ -105,11 +88,41 @@ class WaypointUpdater(object):
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
         return closest_idx
 
-    def publish_waypoints(self, closest_idx):
+    def publish_waypoints(self):
+        final_lane = self.generate_lane()
+        self.final_waypoints_pub.publish(final_lane)
+
+    def generate_lane(self):
         lane = Lane()
-        lane.header = self.base_waypoints.header
-        lane.waypoints = self.base_waypoints.waypoints[closest_idx:closest_idx + LOOKAHEAD_WPS]
-        self.final_waypoints_pub.publish(lane)
+
+        closest_idx = self.get_closest_waypoint_idx()
+        farthest_idx = closest_idx + LOOKAHEAD_WPS
+        base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]
+
+        if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
+            lane.waypoints = base_waypoints
+        else:
+            lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_idx)
+
+        return lane
+
+    def decelerate_waypoints(self, waypoints, closest_idx):
+        temp = []
+        for i, wp in enumerate(waypoints):
+
+            p = Waypoint()
+            p.pose = wp.pose
+
+            stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)# Two waypoints back from line so front of car stops at line
+            dist = self.distance(waypoints, i, stop_idx)
+            vel = math.sqrt(2 * MAX_DECEL * dist)
+            if vel < 1.0:
+                vel = 0.0
+
+            p.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
+            temp.append(p)
+
+        return temp
 
     def pose_cb(self, msg):
         self.pose = msg
@@ -117,11 +130,13 @@ class WaypointUpdater(object):
     def waypoints_cb(self, waypoints):
         self.base_waypoints = waypoints
         if not self.waypoints_2d:
-            self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoint]
+            self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in
+                                 waypoints.waypoint]
             self.waypoint_tree = KDTree(self.waypoints_2d)
 
     def traffic_cb(self, msg):
-        pass
+        # TODO: Callback for /traffic_waypoint message.  Implement
+        self.stopline_wp_idx = msg.data
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
@@ -297,8 +312,6 @@ class WaypointUpdater(object):
 
         return waypoint_idx
 
-
-
     def traffic_cb(self, msg):
         if self.current_velocity is None or self.current_pos is None or self.base_waypoints is None:
             return
@@ -327,6 +340,7 @@ class WaypointUpdater(object):
                 self.red_stop_light_ahead = True
             else:
                 self.red_stop_light_ahead = False
+
 
 if __name__ == '__main__':
     try:

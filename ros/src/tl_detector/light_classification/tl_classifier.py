@@ -76,18 +76,20 @@ class TLClassifier(object):
 
         min_score_thresh = .01
         count = 0
-        print(scores)
+        count1 = 0
+        #print(scores)
         
         for i in range(boxes.shape[0]):
             if scores is None or scores[i] > min_score_thresh:
+                count1 += 1
                 class_name = self.category_index[classes[i]]['name']
 
                 # Traffic light thing
                 if class_name == 'Red':
                     count += 1
 
-        print(count)
-        if count < 5-count:
+        #print(count)
+        if count < count1-count:
             self.current_light = TrafficLight.GREEN
         else:
             self.current_light = TrafficLight.RED

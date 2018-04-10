@@ -36,21 +36,28 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+        self.pose_cb_count = 0
         self.traffic_cb_count = 0
+        self.image_cb_count = 0
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=2)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb, queue_size=8)
-        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb, queue_size=2)
-        rospy.Subscriber('/image_color', Image, self.image_cb, queue_size=1)
+        image_lights = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb, queue_size=2)
+        image_sub = rospy.Subscriber('/image_color', Image, self.image_cb, queue_size=1)
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
+        rospy.logwarn("image_lights={}".format(image_lights))
+        rospy.logwarn("image_sub={}".format(image_sub))
         rospy.spin()
 
     def pose_cb(self, msg):
         self.pose = msg
+        self.pose_cb_count += 1
+        if self.pose_cb_count % 100 == 0:
+            rospy.logwarn("pose_cb_count={}".format(self.pose_cb_count))
 
     def waypoints_cb(self, waypoints):
         self.base_waypoints = waypoints
@@ -58,9 +65,13 @@ class TLDetector(object):
             self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in
                                  waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoints_2d)
+            rospy.logwarn("set waypoints_2d and waypoint_tree")
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
+        self.traffic_cb_count += 1
+        if self.traffic_cb_count % 100 == 0:
+            rospy.logwarn("traffic_cb_count={}".format(self.traffic_cb_count))
 
     def image_cb(self, msg):
         """
@@ -69,6 +80,10 @@ class TLDetector(object):
         :param msg: image from car-mounted camera
         :return:
         """
+        self.image_cb_count += 1
+        if self.image_cb_count % 100 == 0:
+            rospy.logwarn("image_cb_count={}".format(self.image_cb_count))
+
         self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()

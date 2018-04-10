@@ -24,7 +24,7 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200  # Number of waypoints we will publish.
+LOOKAHEAD_WPS = 50  # Number of waypoints we will publish.
 STOP_LIGHT_MARGIN = 30  # Distance in waypoints between the stop line and the stop light
 STOP_LINE_MARGIN = 3.0  # Distance in meters to pad in front of the stop line
 MIN_BRAKING_DIST = STOP_LIGHT_MARGIN * -0.5  # Keep braking for the stop light through this distance
@@ -51,18 +51,18 @@ class WaypointUpdater(object):
         self.waypoints_2d = None
         self.waypoint_tree = None
 
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=2)
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb, queue_size=8)
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=LOOKAHEAD_WPS)
 
         self.loop()
 
     def loop(self):
-        rate = rospy.Rate(50)  # Could go all the way down to 30
+        rate = rospy.Rate(30)  # Could go all the way down to 30
         while not rospy.is_shutdown():
             if self.pose and self.base_lane:
                 self.publish_waypoints()

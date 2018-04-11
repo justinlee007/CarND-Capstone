@@ -36,28 +36,20 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
-        self.pose_cb_count = 0
-        self.traffic_cb_count = 0
-        self.image_cb_count = 0
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=2)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb, queue_size=8)
-        image_lights = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb, queue_size=2)
-        image_sub = rospy.Subscriber('/image_color', Image, self.image_cb, queue_size=1)
+        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb, queue_size=2)
+        rospy.Subscriber('/image_color', Image, self.image_cb, queue_size=1)
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
-        rospy.logwarn("image_lights={}".format(image_lights))
-        rospy.logwarn("image_sub={}".format(image_sub))
         rospy.spin()
 
     def pose_cb(self, msg):
         self.pose = msg
-        self.pose_cb_count += 1
-        if self.pose_cb_count % 100 == 0:
-            rospy.logwarn("pose_cb_count={}".format(self.pose_cb_count))
 
     def waypoints_cb(self, waypoints):
         self.base_waypoints = waypoints
@@ -65,13 +57,9 @@ class TLDetector(object):
             self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in
                                  waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoints_2d)
-            rospy.logwarn("set waypoints_2d and waypoint_tree")
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
-        self.traffic_cb_count += 1
-        if self.traffic_cb_count % 100 == 0:
-            rospy.logwarn("traffic_cb_count={}".format(self.traffic_cb_count))
 
     def image_cb(self, msg):
         """
@@ -80,15 +68,9 @@ class TLDetector(object):
         :param msg: image from car-mounted camera
         :return:
         """
-        self.image_cb_count += 1
-        if self.image_cb_count % 100 == 0:
-            rospy.logwarn("image_cb_count={}".format(self.image_cb_count))
-
         self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()
-        rospy.logwarn("light_wp={}, state={}".format(light_wp, state))
-
         '''
         Publish upcoming red lights at camera frequency.
         Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
@@ -108,13 +90,11 @@ class TLDetector(object):
         self.state_count += 1
 
     def process_traffic_lights(self):
-        """Finds closest visible traffic light, if one exists, and determines its
-            location and color
-
-        Returns:
-            int: index of waypoint closest to the upcoming stop line for a traffic light (-1 if none exists)
-            int: ID of traffic light color (specified in styx_msgs/TrafficLight)
-
+        """
+        Finds closest visible traffic light, if one exists, and determines its location and color
+        :return:
+        int: index of waypoint closest to the upcoming stop line for a traffic light (-1 if none exists)
+        int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         closest_light = None
         line_wp_idx = None
@@ -145,28 +125,21 @@ class TLDetector(object):
         return -1, TrafficLight.UNKNOWN
 
     def get_closest_waypoint(self, x, y):
-        """Identifies the closest path waypoint to the given position
-            https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
-        Args:
-            pose (Pose): position to match a waypoint to
-
-        Returns:
-            int: index of the closest waypoint in self.waypoints
-
         """
-        # TODO implement
+        Identifies the closest path waypoint to the given position
+        https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
+        :param x: x coord position to match a waypoint to
+        :param y: y coord position to match a waypoint to
+        :return: index of the closest waypoint in self.waypoints
+        """
         closest_idx = self.waypoint_tree.query([x, y], 1)[1]
         return closest_idx
 
     def get_light_state(self, light):
-        """Determines the current color of the traffic light
-
-        Args:
-            light (TrafficLight): light to classify
-
-        Returns:
-            int: ID of traffic light color (specified in styx_msgs/TrafficLight)
-
+        """
+        Determines the current color of the traffic light
+        :param light: light to classify
+        :return: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         # For testing, just return the light state
         return light.state

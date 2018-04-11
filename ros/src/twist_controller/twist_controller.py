@@ -68,8 +68,8 @@ class Controller(object):
 
         if (current_time - self.log_time) > LOGGING_THROTTLE_FACTOR:
             self.log_time = current_time
-            rospy.logdebug(
+            rospy.logwarn(
                 "current_vel={:.2f}, linear_vel={:.2f}, vel_error={:.2f}".format(current_vel, linear_vel, vel_error))
-            rospy.logdebug("throttle={:.2f}, brake={:.2f}, steering={:.2f}".format(throttle, brake, steering))
+            rospy.logwarn("throttle={:.2f}, brake={:.2f}, steering={:.2f}".format(throttle, brake, steering))
 
         return throttle, brake, steering

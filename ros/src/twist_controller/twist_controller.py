@@ -6,6 +6,8 @@ from yaw_controller import YawController
 
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
+LOGGING_THROTTLE_FACTOR = 2  # Only log after this many seconds
+MAX_BRAKE = 400.0
 
 
 class Controller(object):
@@ -33,24 +35,15 @@ class Controller(object):
         self.wheel_radius = wheel_radius
 
         self.last_time = rospy.get_time()
-        self.count = 0
+        self.log_time = rospy.get_time()
 
     def control(self, current_vel, dbw_enabled, linear_vel, angular_vel):
-        # TODO: Change the arg, kwarg list to suit your needs
         # Return throttle, brake, steer
         if not dbw_enabled:
             self.throttle_controller.reset()
             return 0.0, 0.0, 0.0
 
         current_vel = self.vel_lpf.filt(current_vel)
-
-        self.count += 1
-        if self.count % 100 == 0:
-            rospy.logwarn("Current velocity: {:.2f}".format(current_vel))
-            rospy.logwarn("Filtered velocity: {:.2f}".format(self.vel_lpf.get()))
-            rospy.logwarn("Target velocity: {:.2f}".format(linear_vel))
-            rospy.logwarn("Angular vel: {:.4f}".format(angular_vel))
-            rospy.logwarn("Target angular velocity: {:.4f}\n".format(angular_vel))
 
         steering = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel)
 
@@ -62,15 +55,21 @@ class Controller(object):
         self.last_time = current_time
 
         throttle = self.throttle_controller.step(vel_error, sample_time)
-        brake = 0
+        brake = 0.0
 
         if linear_vel == 0.0 and current_vel < 0.1:
             throttle = 0.0
-            brake = 400  # N*m - to hold the car in place if we are stopped at a light. Acceleration ~ 1m/s^2
+            brake = MAX_BRAKE  # N*m - to hold the car in place if we are stopped at a light. Acceleration ~ 1m/s^2
 
         elif throttle < 0.1 and vel_error < 0:
             throttle = 0.0
             decel = max(vel_error, self.decel_limit)
             brake = abs(decel) * self.vehicle_mass * self.wheel_radius  # Torque N*m
+
+        if (current_time - self.log_time) > LOGGING_THROTTLE_FACTOR:
+            self.log_time = current_time
+            rospy.logdebug(
+                "current_vel={:.2f}, linear_vel={:.2f}, vel_error={:.2f}".format(current_vel, linear_vel, vel_error))
+            rospy.logdebug("throttle={:.2f}, brake={:.2f}, steering={:.2f}".format(throttle, brake, steering))
 
         return throttle, brake, steering

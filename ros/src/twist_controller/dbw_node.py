@@ -30,6 +30,8 @@ that we have created in the `__init__` function.
 
 '''
 
+PUBLISHING_RATE = 50  # Rate (Hz) of telemetry publishing
+
 
 class DBWNode(object):
     def __init__(self):
@@ -62,7 +64,6 @@ class DBWNode(object):
                                      max_lat_accel=max_lat_accel,
                                      max_steer_angle=max_steer_angle)
 
-        # Subscribe to all the topics you need to
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb, queue_size=1)
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cb, queue_size=2)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb, queue_size=5)
@@ -77,15 +78,14 @@ class DBWNode(object):
         self.loop()
 
     def loop(self):
-        rate = rospy.Rate(50)  # 50Hz
+        rate = rospy.Rate(PUBLISHING_RATE)  # 50Hz
         while not rospy.is_shutdown():
-            # TODO: Get predicted throttle, brake, and steering using `twist_controller`
-            # You should only publish the control commands if dbw is enabled
+            # Only publish the control commands if dbw is enabled
             if not None in (self.current_vel, self.linear_vel, self.angular_vel):
                 self.throttle, self.brake, self.steering = self.controller.control(self.current_vel,
-                                                                                    self.dbw_enabled,
-                                                                                    self.linear_vel,
-                                                                                    self.angular_vel)
+                                                                                   self.dbw_enabled,
+                                                                                   self.linear_vel,
+                                                                                   self.angular_vel)
 
             if self.dbw_enabled:
                 self.publish(self.throttle, self.brake, self.steering)

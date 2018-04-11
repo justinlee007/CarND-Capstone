@@ -13,6 +13,9 @@ from styx_msgs.msg import Lane, TrafficLightArray, TrafficLight
 from light_classification.tl_classifier import TLClassifier
 
 STATE_COUNT_THRESHOLD = 3
+# Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
+# False for Model Prediction Traffic Data
+TEST_MODE_ENABLED = True
 
 
 class TLDetector(object):
@@ -66,7 +69,6 @@ class TLDetector(object):
         Identifies red lights in the incoming camera image and publishes the index of the waypoint closest to the red
         light's stop line to /traffic_waypoint
         :param msg: image from car-mounted camera
-        :return:
         """
         self.has_image = True
         self.camera_image = msg
@@ -104,7 +106,6 @@ class TLDetector(object):
         if self.pose:
             car_wp_idx = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
 
-            # TODO find the closest visible traffic light (if one exists)
             diff = len(self.base_waypoints.waypoints)
             for i, light in enumerate(self.lights):
                 # Get stop line waypoint index
@@ -141,17 +142,14 @@ class TLDetector(object):
         :param light: light to classify
         :return: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
-        # For testing, just return the light state
-        return light.state
+        if TEST_MODE_ENABLED or not self.has_image:
+            # For testing, just return the light state
+            return light.state
 
-        # if (not self.has_image):
-        #    self.prev_light_loc = None
-        #    return False
-
-        # cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
         # Get classification
-        # return self.light_classifier.get_classification(cv_image)
+        return self.light_classifier.get_classification(cv_image)
 
 
 if __name__ == '__main__':

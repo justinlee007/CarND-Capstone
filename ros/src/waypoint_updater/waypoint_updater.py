@@ -26,13 +26,8 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 
 LOOKAHEAD_WPS = 50  # Number of waypoints we will publish.
 PUBLISHING_RATE = 30  # Rate (Hz) of waypoint publishing
-STOP_LIGHT_MARGIN = 30  # Distance in waypoints between the stop line and the stop light
-STOP_LINE_MARGIN = 3  # Distance in waypoints to pad in front of the stop line
-MIN_BRAKING_DIST = STOP_LIGHT_MARGIN * -0.5  # Keep braking for the stop light through this distance
-MAX_ACCEL = 2.0
+STOP_LINE_MARGIN = 5  # Distance in waypoints to pad in front of the stop line
 MAX_DECEL = 0.5
-COAST_VELOCITY = 4.0  # Minimum velocity while coasting up to the light
-LOGGING_THROTTLE_FACTOR = 10  # Only log after this many loops
 
 # Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
 # False for Model Prediction Traffic Data
@@ -135,7 +130,7 @@ class WaypointUpdater(object):
 
     def traffic_cb(self, msg):
         if self.stopline_wp_idx != msg.data:
-            rospy.logwarn("new stopline_wp_idx={}, old stopline_wp_idx={}".format(msg.data, self.stopline_wp_idx))
+            rospy.loginfo("new stopline_wp_idx={}, old stopline_wp_idx={}".format(msg.data, self.stopline_wp_idx))
             self.stopline_wp_idx = msg.data
 
     def obstacle_cb(self, msg):

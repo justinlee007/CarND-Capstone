@@ -15,7 +15,7 @@ from light_classification.tl_classifier import TLClassifier
 STATE_COUNT_THRESHOLD = 3
 # Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
 # False for Model Prediction Traffic Data
-TEST_MODE_ENABLED = True
+TEST_MODE_ENABLED = False
 
 
 class TLDetector(object):
@@ -26,7 +26,6 @@ class TLDetector(object):
         self.base_waypoints = None
         self.waypoints_2d = None
         self.waypoint_tree = None
-        self.has_image = None
         self.camera_image = None
         self.lights = []
 
@@ -70,7 +69,6 @@ class TLDetector(object):
         light's stop line to /traffic_waypoint
         :param msg: image from car-mounted camera
         """
-        self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()
         '''
@@ -142,8 +140,9 @@ class TLDetector(object):
         :param light: light to classify
         :return: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
-        if TEST_MODE_ENABLED or not self.has_image:
-            # For testing, just return the light state
+
+        # For test mode, just return the light state
+        if TEST_MODE_ENABLED:
             return light.state
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")

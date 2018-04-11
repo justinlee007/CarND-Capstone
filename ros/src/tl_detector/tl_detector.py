@@ -15,7 +15,7 @@ from light_classification.tl_classifier import TLClassifier
 STATE_COUNT_THRESHOLD = 3
 # Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
 # False for Model Prediction Traffic Data
-TEST_MODE_ENABLED = False
+TEST_MODE_ENABLED = True
 
 
 class TLDetector(object):

@@ -29,10 +29,7 @@ CONSTANT_DECEL = 1 / LOOKAHEAD_WPS  # Deceleration constant for smoother braking
 PUBLISHING_RATE = 30  # Rate (Hz) of waypoint publishing
 STOP_LINE_MARGIN = 4  # Distance in waypoints to pad in front of the stop line
 MAX_DECEL = 0.5
-
-# Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
-# False for Model Prediction Traffic Data
-TEST_MODE_ENABLED = True
+LOGGING_THROTTLE_FACTOR = PUBLISHING_RATE * 2  # Only log at this rate (1 / Hz)
 
 
 class WaypointUpdater(object):

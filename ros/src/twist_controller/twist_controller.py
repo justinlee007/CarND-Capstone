@@ -5,7 +5,6 @@ from pid import PID
 from yaw_controller import YawController
 
 GAS_DENSITY = 2.858
-ONE_MPH = 0.44704
 LOGGING_THROTTLE_FACTOR = 2  # Only log after this many seconds
 MAX_BRAKE = 400.0
 

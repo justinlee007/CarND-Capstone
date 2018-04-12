@@ -15,7 +15,8 @@ from light_classification.tl_classifier import TLClassifier
 STATE_COUNT_THRESHOLD = 3
 # Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
 # False for Model Prediction Traffic Data
-TEST_MODE_ENABLED = True
+TEST_MODE_ENABLED = False
+LOGGING_THROTTLE_FACTOR = 1  # Only log at this rate (1 / Hz)
 
 
 class TLDetector(object):
@@ -38,6 +39,8 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+        self.class_count = 0
+        self.process_count = 0
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -97,7 +100,8 @@ class TLDetector(object):
         int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         closest_light = None
-        line_wp_idx = None
+        line_wp_idx = -1
+        state = TrafficLight.UNKNOWN
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
@@ -119,9 +123,11 @@ class TLDetector(object):
         # if we have found a closest light to monitor, then determine the stop line position of this light
         if closest_light:
             state = self.get_light_state(closest_light)
-            return line_wp_idx, state
 
-        return -1, TrafficLight.UNKNOWN
+        self.process_count += 1
+        if (self.process_count % LOGGING_THROTTLE_FACTOR) == 0:
+            rospy.logwarn("DETECT: line_wp_idx={}, state={}".format(line_wp_idx, state))
+        return line_wp_idx, state
 
     def get_closest_waypoint(self, x, y):
         """
@@ -143,12 +149,14 @@ class TLDetector(object):
 
         # For test mode, just return the light state
         if TEST_MODE_ENABLED:
-            return light.state
+            classification = light.state
+        else:
+            cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+            # Get classification
+            classification = self.light_classifier.get_classification(cv_image)
 
-        # Get classification
-        return self.light_classifier.get_classification(cv_image)
+        return classification
 
 
 if __name__ == '__main__':

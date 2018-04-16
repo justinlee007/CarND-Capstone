@@ -1,4 +1,20 @@
-This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree: Programming a Real Self-Driving Car. For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).
+# System Integration Project
+[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+
+This is the final project for the Udacity Self-Driving Car Engineer Nanodegree.  In this project, our team created several ROS nodes to implement core functionality of an autonomous vehicle.  For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).
+
+## Team Members
+The members of team <b>MunixX</b>:
+
+| Name                          | Slack handle | GitHub account                                    |
+|:------------------------------|:-------------|:--------------------------------------------------|
+| Clemens Habedank (team lead)  | @clemens     | [CleWiDank](https://github.com/CleWiDank)         |
+| Justin Lee                    | @justinlee   | [justinlee007]( https://github.com/justinlee007)  |
+| Aaron Piper                   | @apiper0770  |                                                   |
+| Qiong Gui                     | @guiq        | [guiqiong](https://github.com/guiqiong)           |
+| Tan Wang                      | @timn9408    |                                                   |
+
+## Setup
 
 Please use **one** of the two installation options, either native **or** docker installation.
 
@@ -72,3 +88,15 @@ cd CarND-Capstone/ros
 roslaunch launch/site.launch
 ```
 5. Confirm that traffic light detection works on real life images
+
+## Project Overview
+
+### ROS Architecture
+
+### Node Design
+
+### Neural Network Design
+
+## Testing
+
+## Results

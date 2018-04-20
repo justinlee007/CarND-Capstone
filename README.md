@@ -6,13 +6,13 @@ This is the final project for the Udacity Self-Driving Car Engineer Nanodegree. 
 ## Team Members
 The members of team <b>MunixX</b>:
 
-| Name                          | Slack handle | GitHub account                                    |
-|:------------------------------|:-------------|:--------------------------------------------------|
-| Clemens Habedank (team lead)  | @clemens     | [CleWiDank](https://github.com/CleWiDank)         |
-| Justin Lee                    | @justinlee   | [justinlee007]( https://github.com/justinlee007)  |
-| Aaron Piper                   | @apiper0770  |                                                   |
-| Qiong Gui                     | @guiq        | [guiqiong](https://github.com/guiqiong)           |
-| Tan Wang                      | @timn9408    |                                                   |
+| Name                          | Slack handle | GitHub account                                    | Udacity Emails               |
+|:------------------------------|:-------------|:--------------------------------------------------|------------------------------|
+| Clemens Habedank (team lead)  | @clemens     | [CleWiDank](https://github.com/CleWiDank)         |                              |
+| Justin Lee                    | @justinlee   | [justinlee007]( https://github.com/justinlee007)  |                              |
+| Aaron Piper                   | @apiper0770  | [apiper0770]( https://github.com/apiper0770)   | apiper0770@gmail.com            |                                                      |
+| Qiong Gui                     | @guiq        | [guiqiong](https://github.com/guiqiong)           |                              |
+| Tan Wang                      | @timn9408    |                                                   |                              |
 
 ## Setup
 

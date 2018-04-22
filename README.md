@@ -8,11 +8,11 @@ The members of team <b>MunixX</b>:
 
 | Name                          | Slack handle | GitHub account                                    | Udacity Email                       |
 |:------------------------------|:-------------|:--------------------------------------------------|-------------------------------------|
-| Clemens Habedank (team lead)  | @clemens     | [CleWiDank](https://github.com/CleWiDank)         | clemens.w.habedank AT gmail DOT com |
-| Justin Lee                    | @justinlee   | [justinlee007]( https://github.com/justinlee007)  | justin.lee007 AT gmail DOT com      |
-| Aaron Piper                   | @apiper0770  | [apiper0770]( https://github.com/apiper0770)      | apiper0770 AT gmail DOT com         |                                                      |
-| Qiong Gui                     | @guiq        | [guiqiong](https://github.com/guiqiong)           | guiqcn AT gmail DOT com             |
-| Tan Wang                      | @timn9408    |                                                   | timmy940408 AT hotmail DOT com      |
+| Clemens Habedank (team lead)  | @clemens     | [CleWiDank](https://github.com/CleWiDank)         | clemens.w.habedank@gmail.com        |
+| Justin Lee                    | @justinlee   | [justinlee007]( https://github.com/justinlee007)  | justin.lee007@gmail.com             |
+| Aaron Piper                   | @apiper0770  | [apiper0770]( https://github.com/apiper0770)      | apiper0770@gmail.com                |                                                      |
+| Qiong Gui                     | @guiq        | [guiqiong](https://github.com/guiqiong)           | guiqcn@gmail.com                    |
+| Tan Wang                      | @timn9408    |                                                   | timmy940408@hotmail.com             |
 
 ## Setup
 

@@ -12,7 +12,7 @@ The members of team <b>MunixX</b>:
 | Justin Lee                    | @justinlee   | [justinlee007]( https://github.com/justinlee007)  |                              |
 | Aaron Piper                   | @apiper0770  | [apiper0770]( https://github.com/apiper0770)   | apiper0770@gmail.com            |                                                      |
 | Qiong Gui                     | @guiq        | [guiqiong](https://github.com/guiqiong)           |                              |
-| Tan Wang                      | @timn9408    |                                                   |                              |
+| Tan Wang                      | @timn9408    | [dayuwater](https://github.com/dayuwater)                                                   |                              |
 
 ## Setup
 

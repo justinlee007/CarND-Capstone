@@ -93,7 +93,27 @@ roslaunch launch/site.launch
 
 ### ROS Architecture
 
+The ROS Architecture consists of different nodes (written in Python or C++) that communicate with each other via ROS messages. The nodes and their communication with each other are depicted in the picture below. The ovally outlined text boxes inside rectangular boxes represent the ROS nodes while the simple rectangular boxes represent the topics that are subscribed or published to. The direction of the arrows clarifies the respective flow of communication. 
+
+![alt text](https://github.com/CleWiDank/CarND-Capstone/blob/master/rosgraph.jpg)
+
+The most central point in the rqt-graph is the styx_server that links the simulator and ROS by providing information about the car's state and surroundings (car's current position, velocity and images of the front camera) and receiving control input (steering, braking, throttle). The other nodes can be associated with the three central tasks Perception, Planning and Control. 
+
+The images get processed within the traffic light classifier by a trained neural network in order to detect traffic lights. The percepted state of a potentially upcoming traffic light is passed to the traffic light detector as well as the car's current pose and a set of base waypoints coming from the waypoint loader. With this frequently incoming information the traffic light detector is able to publish a waypoint close to the next traffic light where the car should stop in case the light is red. 
+
+With the subscribed information of the traffic light detector and the the subscriptions to base waypoints, the waypoint updater node is able to plan acceleration / deceleration and publish it to the waypoint follower node. This node publishes to the DBW (Drive by wire) node that satisfies the task of steering the car autonomously. It also takes as input the car's current velocity (coming directly from the car / simulator) and outputs steering, braking and throttle commands. 
+
 ### Node Design
+
+In this paragraph it will be talked about the node design of those nodes that are built within this project. Those are the waypoint updater(waypoint_updater.py), the traffic light detector (tl_detector.py) and the drive by wire node (dbw_node.py). 
+
+The waypoint updater node takes a central role in the planning task because it determines which waypoints the car should follow. The node is structured into different parts: First an import-part, where some python libraries and some message formats are imported, followed by the initialisation of some constants that are not supposed to be changed, e.g. how many waypoints are published and in which rate. After this part the class WaypointUpdater is introduced. It is is structured into different functions. The first function is the init-function defining the attributes of the class and determining which topics the class subscribes to and which ones it publishes. 
+The following functions are either general methods or callback functions that are invoked repeatedly by the subscribers in the init-function. Repeatedly called are the base waypoints (output of waypoint loader), the car's pose (simulator / car) and the traffic waypoint (output of tl_detector). The most important general method is the decelerate_waypoints-function which incorporates a square-root shaped deceleration towards a stopline in case the traffic light is red.  
+At the end of the node there is the main function that runs the node and logs an error in case ROS is interrupted by some reason. 
+
+The structure of the traffic light detector is the same in the way that there is an import/initialisation-part followed by a class with attributes and functions and the main functions that compiles the code. The init-function of the TLDetector class includes the subscriptions to the current position, the base waypoints, the given traffic light array with the coordinates of the traffic lights and the color of the traffic light. The color of the traffic light is the output of the traffic light classifier, a neural network that is explained more in detail in the next paragraph. The topic image_color gets updated by the callback image_cb which itself calls via process_traffic_lights() the function get_light_state() that receives the traffic light classification. Eventually, the waypoint of a potentially upcoming red traffic light is published.
+
+The third node written by us is the dbw_node which is responsible for steering the car. It subscribes to a twist controller which outputs throttle, brake and steering values with the help of a PID-controller and Lowpass filter. The dbw node directly publishes throttle, brake and steering commands for the car /simulator, in case dbw_enabled is set to true. 
 
 ### Neural Network Design
 

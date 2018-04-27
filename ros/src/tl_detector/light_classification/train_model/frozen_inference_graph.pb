@@ -1,1 +1,0 @@
-frozen_inference_graph_sim_v1.4.pb

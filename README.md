@@ -94,6 +94,37 @@ roslaunch launch/site.launch
 
 ## Project Overview
 
+### Carla Architecture
+Carla is the custom Lincoln MKZ that Udacity has converted into a self-driving car.  It's self-driving system is broken down into for major sub-systems: *Sensors*, *Perception*, *Planning* and *Control* 
+
+#### Sensors
+Includes everything needed to understand its surroundings and location
+
+* Cameras
+* Lidar
+* GPS
+* Radar
+* IMU
+
+#### Perception
+Abstracts sensor inputs into object detection and localization
+* Detection
+* Localization
+#### Planning
+##### Route Planning
+The route planning component is responsible for high-level decisions about the path of the vehicle between two points on a map; for example which roads, highways, or freeways to take. This component is similar to the route planning feature found on many smartphones or modern car navigation systems.
+##### Prediction
+The prediction component estimates what actions other objects might take in the future. For example, if another vehicle were identified, the prediction component would estimate its future trajectory.
+##### Behavioral Planning
+The behavioral planning component determines what behavior the vehicle should exhibit at any point in time. For example stopping at a traffic light or intersection, changing lanes, accelerating, or making a left turn onto a new street are all maneuvers that may be issued by this component.
+##### Trajectory Planning
+Based on the desired immediate behavior, the trajectory planning component will determine which trajectory is best for executing this behavior.
+### Control
+The control component takes
+
+
+
+
 ### ROS Architecture
 
 The ROS Architecture consists of different nodes (written in Python or C++) that communicate with each other via ROS messages. The nodes and their communication with each other are depicted in the picture below. The ovally outlined text boxes inside rectangular boxes represent the ROS nodes while the simple rectangular boxes represent the topics that are subscribed or published to. The direction of the arrows clarifies the respective flow of communication. 

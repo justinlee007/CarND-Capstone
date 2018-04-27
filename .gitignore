@@ -135,3 +135,5 @@ ide_profiles/xcode/ExtendedKF.build/
 
 # CarND
 runs/
+ros/traffic_light_bag_file/
+

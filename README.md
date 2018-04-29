@@ -129,7 +129,7 @@ The control component takes
 
 The ROS Architecture consists of different nodes (written in Python or C++) that communicate with each other via ROS messages. The nodes and their communication with each other are depicted in the picture below. The ovally outlined text boxes inside rectangular boxes represent the ROS nodes while the simple rectangular boxes represent the topics that are subscribed or published to. The direction of the arrows clarifies the respective flow of communication. 
 
-<img src="./imgs/rosgraph.jpg" alt="ROS Architecture" "width=132" height="200" />
+<img src="https://github.com/justinlee007/CarND-Capstone/blob/master/imgs/rosgraph.jpg" alt="ROS Architecture" "width=132" height="200" />
 
 The most central point in the rqt-graph is the styx_server that links the simulator and ROS by providing information about the car's state and surroundings (car's current position, velocity and images of the front camera) and receiving control input (steering, braking, throttle). The other nodes can be associated with the three central tasks Perception, Planning and Control. 
 

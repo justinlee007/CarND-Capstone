@@ -17,6 +17,7 @@ STATE_COUNT_THRESHOLD = 3
 # Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
 # False for Model Prediction Traffic Data
 TEST_MODE_ENABLED = False
+SAVE_IMAGES = True
 LOGGING_THROTTLE_FACTOR = 5  # Only log at this rate (1 / Hz)
 
 
@@ -158,7 +159,7 @@ class TLDetector(object):
             classification = self.light_classifier.get_classification(cv_image)
 
             # Save image (throttled)
-            if (self.process_count % LOGGING_THROTTLE_FACTOR) == 0:
+            if SAVE_IMAGES and (self.process_count % LOGGING_THROTTLE_FACTOR == 0):
                 save_file = "../../../imgs/{}-{:.0f}.jpeg".format(self.to_string(classification), (time.time() * 100))
                 cv2.imwrite(save_file, cv_image)
 

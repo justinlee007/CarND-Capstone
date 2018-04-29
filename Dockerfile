@@ -28,6 +28,9 @@ RUN apt-get install -y ros-$ROS_DISTRO-image-proc
 # socket io
 RUN apt-get install -y netbase
 
+# fix for "the rosdep view is empty: call 'sudo rosdep init' and 'rosdep update'"
+RUN rosdep update
+
 RUN mkdir /capstone
 VOLUME ["/capstone"]
 VOLUME ["/root/.ros/log/"]

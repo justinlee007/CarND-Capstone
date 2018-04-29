@@ -1,22 +1,23 @@
 #!/usr/bin/env python
-import yaml
-from cv_bridge import CvBridge
+import time
 
+import cv2
 import rospy
 import tf
+import yaml
+from cv_bridge import CvBridge
 from geometry_msgs.msg import PoseStamped
+from light_classification.tl_classifier import TLClassifier
 from scipy.spatial import KDTree
 from sensor_msgs.msg import Image
 from std_msgs.msg import Int32
 from styx_msgs.msg import Lane, TrafficLightArray, TrafficLight
 
-from light_classification.tl_classifier import TLClassifier
-
 STATE_COUNT_THRESHOLD = 3
 # Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
 # False for Model Prediction Traffic Data
 TEST_MODE_ENABLED = False
-LOGGING_THROTTLE_FACTOR = 1  # Only log at this rate (1 / Hz)
+LOGGING_THROTTLE_FACTOR = 5  # Only log at this rate (1 / Hz)
 
 
 class TLDetector(object):
@@ -122,11 +123,11 @@ class TLDetector(object):
 
         # if we have found a closest light to monitor, then determine the stop line position of this light
         if closest_light:
+            self.process_count += 1
             state = self.get_light_state(closest_light)
+            if (self.process_count % LOGGING_THROTTLE_FACTOR) == 0:
+                rospy.logwarn("DETECT: line_wp_idx={}, state={}".format(line_wp_idx, self.to_string(state)))
 
-        self.process_count += 1
-        if (self.process_count % LOGGING_THROTTLE_FACTOR) == 0:
-            rospy.logwarn("DETECT: line_wp_idx={}, state={}".format(line_wp_idx, state))
         return line_wp_idx, state
 
     def get_closest_waypoint(self, x, y):
@@ -156,7 +157,22 @@ class TLDetector(object):
             # Get classification
             classification = self.light_classifier.get_classification(cv_image)
 
+            # Save image (throttled)
+            if (self.process_count % LOGGING_THROTTLE_FACTOR) == 0:
+                save_file = "../../../imgs/{}-{:.0f}.jpeg".format(self.to_string(classification), (time.time() * 100))
+                cv2.imwrite(save_file, cv_image)
+
         return classification
+
+    def to_string(self, state):
+        out = "unknown"
+        if state == TrafficLight.GREEN:
+            out = "green"
+        elif state == TrafficLight.YELLOW:
+            out = "yellow"
+        elif state == TrafficLight.RED:
+            out = "red"
+        return out
 
 
 if __name__ == '__main__':

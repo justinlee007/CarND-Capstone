@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- Simulator Bridge -->
+    <include file="$(find styx)/launch/server.launch" />
+
     <!--DBW Node -->
     <include file="$(find twist_controller)/launch/dbw.launch"/>
 
@@ -12,11 +15,11 @@
     <!--Waypoint Updater Node -->
     <include file="$(find waypoint_updater)/launch/waypoint_updater.launch"/>
 
-    <!--Traffic Light Locations and Camera Config -->
-    <param name="traffic_light_config" textfile="$(find tl_detector)/site_traffic_light_config.yaml" />
-
     <!--Traffic Light Detector Node -->
     <include file="$(find tl_detector)/launch/tl_detector_site.launch"/>
+
+    <!--Traffic Light Locations and Camera Config -->
+    <param name="traffic_light_config" textfile="$(find tl_detector)/site_traffic_light_config.yaml" />
 
     <!--Camera Calibration YAML -->
     <param name="grasshopper_calibration_yaml" textfile="$(find styx)../../../data/grasshopper_calibration.yml" />

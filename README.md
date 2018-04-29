@@ -9,7 +9,7 @@ This is the final project for the Udacity Self-Driving Car Engineer Nanodegree. 
 [image3]: ./imgs/system_architecture.png
 
 ## Team Members
-The members of team <b>MunixX</b>:
+The members of team **MunixX**:
 
 | Name                          | Slack handle | GitHub account                                    | Udacity Email                       |
 |:------------------------------|:-------------|:--------------------------------------------------|-------------------------------------|
@@ -97,14 +97,14 @@ roslaunch launch/site.launch
 ## Project Overview
 
 ### Carla Architecture
-Carla is the custom Lincoln MKZ that Udacity has converted into a self-driving car.  It's self-driving system is broken down into four major sub-systems: *Sensors*, *Perception*, *Planning* and *Control* 
+Carla is the custom Lincoln MKZ that Udacity has converted into a self-driving car.  It's self-driving system is broken down into four major sub-systems: **Sensors**, **Perception**, **Planning** and **Control** 
 
 ![][image1]
 
 #### Sensors
-Includes everything needed to understand its surroundings and location including *Cameras*, *Lidar*, *GPS*, *Radar*, and *IMU*
+Includes everything needed to understand its surroundings and location including **cameras**, **lidar**, **GPS**, **radar**, and **IMU**
 #### Perception
-Abstracts sensor inputs into object *detection* and *localization*
+Abstracts sensor inputs into object **detection** and **localization**
 ##### Detection
 * Includes software pipelines for vehicle detection, traffic light detection, obstacle detection, etc
 * Techniques in image manipulation include Histogram of Oriented Gradients (HOG) feature extraction, color transforms, spacial binning
@@ -114,7 +114,7 @@ Abstracts sensor inputs into object *detection* and *localization*
 * Based on the notion that GPS is not accurate enough
 * Onboard sensors are used to estimate transformation between measurements and a given map
 #### Planning
-Path planning is broken down into for sub-components: *route planning*, *prediction*, *behavioral planning*, and *trajectory planning*
+Path planning is broken down into for sub-components: **route planning**, **prediction**, **behavioral planning**, and **trajectory planning**
 ##### Route Planning
 The route planning component is responsible for high-level decisions about the path of the vehicle between two points on a map; for example which roads, highways, or freeways to take. This component is similar to the route planning feature found on many smartphones or modern car navigation systems.
 ##### Prediction
@@ -124,7 +124,7 @@ The behavioral planning component determines what behavior the vehicle should ex
 ##### Trajectory Planning
 Based on the desired immediate behavior, the trajectory planning component will determine which trajectory is best for executing this behavior.
 ### Control
-The control component takes trajectory outputs and processes them with a controller algorithm like *PID* or *MPC* to adjust the control inputs for smooth operation of the vehicle. 
+The control component takes trajectory outputs and processes them with a controller algorithm like **PID** or **MPC** to adjust the control inputs for smooth operation of the vehicle. 
 
 
 

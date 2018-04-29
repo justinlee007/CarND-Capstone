@@ -1,16 +1,14 @@
 import os
-import sys
 
 import cv2
 import numpy as np
 import tensorflow as tf
-
 from styx_msgs.msg import TrafficLight
 
 
 class TLClassifier(object):
     def __init__(self):
-        #TODO load classifier
+        # TODO load classifier
         self.current_light = TrafficLight.UNKNOWN
 
         cwd = os.path.dirname(os.path.realpath(__file__))
@@ -26,7 +24,8 @@ class TLClassifier(object):
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
 
-        self.category_index = {1: {'id':1, 'name': 'Green'}, 2: {'id':2, 'name':'Red'}, 3: {'id':3, 'name':'Yellow'}, 4:{'id':4, 'name':'off'}}
+        self.category_index = {1: {'id': 1, 'name': 'Green'}, 2: {'id': 2, 'name': 'Red'},
+                               3: {'id': 3, 'name': 'Yellow'}, 4: {'id': 4, 'name': 'off'}}
 
         # create tensorflow session for detection
         config = tf.ConfigProto()
@@ -56,8 +55,8 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        #return TrafficLight.RED
-        #TODO implement light color prediction
+        # return TrafficLight.RED
+        # TODO implement light color prediction
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         (im_width, im_height, _) = image_rgb.shape
         image_np = np.expand_dims(image_rgb, axis=0)
@@ -65,20 +64,19 @@ class TLClassifier(object):
         # Actual detection.
         with self.detection_graph.as_default():
             (boxes, scores, classes, num) = self.sess.run(
-                    [self.detection_boxes, self.detection_scores, 
-                    self.detection_classes, self.num_detections],
-                    feed_dict={self.image_tensor: image_np})
+                [self.detection_boxes, self.detection_scores,
+                 self.detection_classes, self.num_detections],
+                feed_dict={self.image_tensor: image_np})
 
         boxes = np.squeeze(boxes)
         scores = np.squeeze(scores)
         classes = np.squeeze(classes).astype(np.int32)
 
-
-        min_score_thresh = .01
+        min_score_thresh = .5
         count = 0
         count1 = 0
-        #print(scores)
-        
+        # print(scores)
+
         for i in range(boxes.shape[0]):
             if scores is None or scores[i] > min_score_thresh:
                 count1 += 1
@@ -88,11 +86,10 @@ class TLClassifier(object):
                 if class_name == 'Red':
                     count += 1
 
-        #print(count)
-        if count < count1-count:
+        # print(count)
+        if count < count1 - count:
             self.current_light = TrafficLight.GREEN
         else:
             self.current_light = TrafficLight.RED
-       
+
         return self.current_light
-        

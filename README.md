@@ -4,7 +4,9 @@
 This is the final project for the Udacity Self-Driving Car Engineer Nanodegree.  In this project, our team created several ROS nodes to implement core functionality of an autonomous vehicle.  For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).
 
 [//]: # (Image References)
-[image1]: ./imgs/rosgraph.jpg
+[image1]: ./imgs/carla_architecture2.png
+[image2]: ./imgs/rosgraph2.jpg
+[image3]: ./imgs/system_architecture2.png
 
 ## Team Members
 The members of team <b>MunixX</b>:
@@ -95,22 +97,24 @@ roslaunch launch/site.launch
 ## Project Overview
 
 ### Carla Architecture
-Carla is the custom Lincoln MKZ that Udacity has converted into a self-driving car.  It's self-driving system is broken down into for major sub-systems: *Sensors*, *Perception*, *Planning* and *Control* 
+Carla is the custom Lincoln MKZ that Udacity has converted into a self-driving car.  It's self-driving system is broken down into four major sub-systems: *Sensors*, *Perception*, *Planning* and *Control* 
+
+![][image1]
 
 #### Sensors
-Includes everything needed to understand its surroundings and location
-
-* Cameras
-* Lidar
-* GPS
-* Radar
-* IMU
-
+Includes everything needed to understand its surroundings and location including *Cameras*, *Lidar*, *GPS*, *Radar*, and *IMU*
 #### Perception
-Abstracts sensor inputs into object detection and localization
-* Detection
-* Localization
+Abstracts sensor inputs into object *detection* and *localization*
+##### Detection
+* Includes software pipelines for vehicle detection, traffic light detection, obstacle detection, etc
+* Techniques in image manipulation include Histogram of Oriented Gradients (HOG) feature extraction, color transforms, spacial binning
+* Methods of classification include sliding-window or sub-sampling along with heat maps and bounding boxes for recurring detections
+##### Localization
+* Answers the question: “Where is our car in a given map with an accuracy of 10cm or less?”
+* Based on the notion that GPS is not accurate enough
+* Onboard sensors are used to estimate transformation between measurements and a given map
 #### Planning
+Path planning is broken down into for sub-components: *route planning*, *prediction*, *behavioral planning*, and *trajectory planning*
 ##### Route Planning
 The route planning component is responsible for high-level decisions about the path of the vehicle between two points on a map; for example which roads, highways, or freeways to take. This component is similar to the route planning feature found on many smartphones or modern car navigation systems.
 ##### Prediction
@@ -120,7 +124,7 @@ The behavioral planning component determines what behavior the vehicle should ex
 ##### Trajectory Planning
 Based on the desired immediate behavior, the trajectory planning component will determine which trajectory is best for executing this behavior.
 ### Control
-The control component takes
+The control component takes trajectory outputs and processes them with a controller algorithm like *PID* or *MPC* to adjust the control inputs for smooth operation of the vehicle. 
 
 
 
@@ -129,7 +133,7 @@ The control component takes
 
 The ROS Architecture consists of different nodes (written in Python or C++) that communicate with each other via ROS messages. The nodes and their communication with each other are depicted in the picture below. The ovally outlined text boxes inside rectangular boxes represent the ROS nodes while the simple rectangular boxes represent the topics that are subscribed or published to. The direction of the arrows clarifies the respective flow of communication. 
 
-![][image1]
+![][image2]
 
 The most central point in the rqt-graph is the styx_server that links the simulator and ROS by providing information about the car's state and surroundings (car's current position, velocity and images of the front camera) and receiving control input (steering, braking, throttle). The other nodes can be associated with the three central tasks Perception, Planning and Control. 
 
@@ -139,14 +143,19 @@ With the subscribed information of the traffic light detector and the the subscr
 
 ### Node Design
 
+![][image3]
+
 In this paragraph it will be talked about the node design of those nodes that are built within this project. Those are the waypoint updater(waypoint_updater.py), the traffic light detector (tl_detector.py) and the drive by wire node (dbw_node.py). 
 
+#### Waypoint Updater
 The waypoint updater node takes a central role in the planning task because it determines which waypoints the car should follow. The node is structured into different parts: First an import-part, where some python libraries and some message formats are imported, followed by the initialisation of some constants that are not supposed to be changed, e.g. how many waypoints are published and in which rate. After this part the class WaypointUpdater is introduced. It is is structured into different functions. The first function is the init-function defining the attributes of the class and determining which topics the class subscribes to and which ones it publishes. 
 The following functions are either general methods or callback functions that are invoked repeatedly by the subscribers in the init-function. Repeatedly called are the base waypoints (output of waypoint loader), the car's pose (simulator / car) and the traffic waypoint (output of tl_detector). The most important general method is the decelerate_waypoints-function which incorporates a square-root shaped deceleration towards a stopline in case the traffic light is red.  
 At the end of the node there is the main function that runs the node and logs an error in case ROS is interrupted by some reason. 
 
+#### Traffic Light Detection
 The structure of the traffic light detector is the same in the way that there is an import/initialisation-part followed by a class with attributes and functions and the main functions that compiles the code. The init-function of the TLDetector class includes the subscriptions to the current position, the base waypoints, the given traffic light array with the coordinates of the traffic lights and the color of the traffic light. The color of the traffic light is the output of the traffic light classifier, a neural network that is explained more in detail in the next paragraph. The topic image_color gets updated by the callback image_cb which itself calls via process_traffic_lights() the function get_light_state() that receives the traffic light classification. Eventually, the waypoint of a potentially upcoming red traffic light is published.
 
+#### Drive-By-Wire (DBW) Node
 The third node written by us is the dbw_node which is responsible for steering the car. It subscribes to a twist controller which outputs throttle, brake and steering values with the help of a PID-controller and Lowpass filter. The dbw node directly publishes throttle, brake and steering commands for the car /simulator, in case dbw_enabled is set to true. 
 
 ### Neural Network Design

@@ -7,6 +7,10 @@ This is the final project for the Udacity Self-Driving Car Engineer Nanodegree. 
 [image1]: ./imgs/carla_architecture.png
 [image2]: ./imgs/rosgraph.jpg
 [image3]: ./imgs/system_architecture.png
+[video1]: ./imgs/test_run.gif
+[video2]: https://youtu.be/zzp5BUIF1RM
+
+![][video1]
 
 ## Team Members
 The members of team **MunixX**:
@@ -176,5 +180,7 @@ examples of real testing results:
 ![real_none](https://user-images.githubusercontent.com/12635332/39412259-8b125892-4bce-11e8-9e59-64a689a7eb99.png)
 
 ## Testing
+
+
 
 ## Results

@@ -17,7 +17,7 @@ STATE_COUNT_THRESHOLD = 3
 # Test mode uses "/vehicle/traffic_lightsTrue for Ground Truth Traffic Data
 # False for Model Prediction Traffic Data
 TEST_MODE_ENABLED = False
-SAVE_IMAGES = True
+SAVE_IMAGES = False
 LOGGING_THROTTLE_FACTOR = 5  # Only log at this rate (1 / Hz)
 
 

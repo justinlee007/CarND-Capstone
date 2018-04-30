@@ -159,6 +159,21 @@ The structure of the traffic light detector is the same in the way that there is
 The third node written by us is the dbw_node which is responsible for steering the car. It subscribes to a twist controller which outputs throttle, brake and steering values with the help of a PID-controller and Lowpass filter. The dbw node directly publishes throttle, brake and steering commands for the car /simulator, in case dbw_enabled is set to true. 
 
 ### Neural Network Design
+The traffic light classification model is based on the pre-trained on the COCO dataset model "faster_rcnn_resnet101_coco" from Tensorflow detection model zoo (https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md). Using the Tensorflow Object Detection API (https://github.com/tensorflow/models/tree/master/research/object_detection), the simulator data model and real data model were trained. Step by Step Tensorflow Object Detection API tutorial (https://medium.com/@WuStangDan/step-by-step-tensorflow-object-detection-api-tutorial-part-1-selecting-a-model-a02b6aabe39e and so on) was a good guide of using the Tensorflow object detection API for traffic light classification. The simulator dataset was from https://drive.google.com/file/d/0Bw5abyXVejvMci03bFRueWVXX1U, and the real dataset was from https://drive.google.com/file/d/0B-Eiyn-CUQtxdUZWMkFfQzdObUE. The models are available at https://drive.google.com/drive/folders/1kDGoZ02HkhLnar40DAGfSBonTTz7LKAg?usp=sharing. The classification output has four categories: Red, Green, Yellow and off. To simplify, the final output will be Red or Non-Red, that is only the Red will be classified as TrafficLight.RED, and the other cases will be classified as TrafficLight.GREEN.
+
+examples of simulator testing results:
+
+![sim_red](https://user-images.githubusercontent.com/12635332/39411764-80e4135a-4bc5-11e8-90de-be830ed9ffcb.png)
+![sim_green](https://user-images.githubusercontent.com/12635332/39411770-96841c50-4bc5-11e8-8ffb-bd41fb549881.png)
+![sim-yellow](https://user-images.githubusercontent.com/12635332/39411774-9f08b6c4-4bc5-11e8-8921-3fefcad68e04.png)
+![sim_none](https://user-images.githubusercontent.com/12635332/39411776-a7a32d78-4bc5-11e8-8034-bbc0066d8b30.png)
+
+examples of real testing results:
+
+![real_red](https://user-images.githubusercontent.com/12635332/39411790-e24bf022-4bc5-11e8-95b2-55a7fd07ddf5.png)
+![real_green](https://user-images.githubusercontent.com/12635332/39411788-d874bbb0-4bc5-11e8-866f-1496f7f47596.png)
+![real_yellow](https://user-images.githubusercontent.com/12635332/39412245-4e0ad37a-4bce-11e8-9312-7f727d085676.png)
+![real_none](https://user-images.githubusercontent.com/12635332/39412259-8b125892-4bce-11e8-9e59-64a689a7eb99.png)
 
 ## Testing
 

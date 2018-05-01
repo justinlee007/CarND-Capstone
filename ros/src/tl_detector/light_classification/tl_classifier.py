@@ -2,18 +2,20 @@ import os
 
 import cv2
 import numpy as np
+import rospy
 import tensorflow as tf
 from styx_msgs.msg import TrafficLight
 
 
 class TLClassifier(object):
-    def __init__(self):
+    def __init__(self, model_file):
         # TODO load classifier
         self.current_light = TrafficLight.UNKNOWN
 
         cwd = os.path.dirname(os.path.realpath(__file__))
 
-        model_path = os.path.join(cwd, 'train_model/frozen_inference_graph.pb')
+        model_path = os.path.join(cwd, "train_model/{}".format(model_file))
+        rospy.logwarn("model_path={}".format(model_path))
 
         # load frozen tensorflow model
         self.detection_graph = tf.Graph()

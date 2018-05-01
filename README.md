@@ -156,7 +156,7 @@ The following functions are either general methods or callback functions that ar
 The structure of the traffic light detector is identical to the Waypoint Updater in the sense that there is an import/initialization section followed by a class with attributes and functions.  Finally TL detection subroutine utilizes its main function to compile the code. The init-function of the TLDetector class includes the subscriptions to the current position base waypoints, the given traffic light array with the ground-truth coordinates of the traffic lights, along with the identified color of the traffic light. The color of the traffic light is the output of the traffic light classifier, a neural network that is explained in more detail in the next paragraph. The topic image_color gets updated by the callback image_cb, which itself calls via the process_traffic_lights() function, who in turn utilizes the function get_light_state() that receives the traffic light classification. Eventually, the waypoint to stop at for any upcoming identified red traffic light is published in this subroutine.
 
 #### Drive-By-Wire (DBW) Node
-The third node written by us is the dbw_node which is responsible for steering the car. It subscribes to a twist controller which outputs throttle, brake and steering values with the help of a PID-contsuroller and Lowpasstine filter. The dbw node directly publishes throttle, brake and steering commands for the car/simulator, in case dbw_enabled is set to true.
+The third node written by us is the dbw_node which is responsible for steering the car. It subscribes to a twist controller which outputs throttle, brake and steering values with the help of a PID-controller and Lowpass filter. The dbw node directly publishes throttle, brake and steering commands for the car/simulator, in case dbw_enabled is set to true.
 
 ### Neural Network Design
 
@@ -193,7 +193,7 @@ After getting the program  working, the walkthrough videos were then posted to t
 
 [Here][video2] is a sample video of the test track running.
 
-One of the hardest tasks for this project was getting the environment setup. Apple products are essentially not supported and any computer without a very powerful GPU incapable of running the network while the simulator is simulatenously running.
+One of the hardest tasks for this project was getting the environment setup. Apple products are essentially not supported and any computer without a very powerful GPU is incapable of running the network while the simulator is simulatenously running.
 
 Our team was also puzzled by how the vehicle should interact and  maneuver within the test lot in order to complete the project.  The test track on the other hand straight-forward as there are standard rules of the road that must be followed to successfully traverse the track.  There are also, generally speaking, standardized maneuvers to perform on the road that lead to easy vehicle behavior trajectories on the test track.  On the other hand the test lot is troublesome and quirky because of the lack of standarized rules of road, and lack of standardized maneuvers to perform within the test lot.
 

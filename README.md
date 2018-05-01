@@ -15,13 +15,13 @@ This is the final project for the Udacity Self-Driving Car Engineer Nanodegree. 
 ## Team Members
 The members of team **MunixX**:
 
-| Name                          | Slack handle | GitHub account                                    | Udacity Email                       |
-|:------------------------------|:-------------|:--------------------------------------------------|-------------------------------------|
-| Clemens Habedank (team lead)  | @clemens     | [CleWiDank](https://github.com/CleWiDank)         | clemens.w.habedank@gmail.com        |
-| Justin Lee                    | @justinlee   | [justinlee007]( https://github.com/justinlee007)  | justin.lee007@gmail.com             |
-| Aaron Piper                   | @apiper0770  | [apiper0770]( https://github.com/apiper0770)      | apiper0770@gmail.com                |
-| Qiong Gui                     | @guiq        | [guiqiong](https://github.com/guiqiong)           | guiqcn@gmail.com                    |
-| Tan Wang                      | @timn9408    | [dayuwater](https://github.com/dayuwater)         | timmy940408@hotmail.com             |
+| Name                          | Slack handle | GitHub account                                    | Udacity Email                 |
+|:------------------------------|:-------------|:--------------------------------------------------|-------------------------------|
+| Clemens Habedank (team lead)  | @clemens     | [CleWiDank](https://github.com/CleWiDank)         | clemens.w.habedank@gmail.com  |
+| Justin Lee                    | @justinlee   | [justinlee007]( https://github.com/justinlee007)  | justin.lee007@gmail.com       |
+| Aaron Piper                   | @apiper0770  | [apiper0770]( https://github.com/apiper0770)      | apiper0770@gmail.com          |
+| Qiong Gui                     | @guiq        | [guiqiong](https://github.com/guiqiong)           | guiqcn@gmail.com              |
+| Tan Wang                      | @timn9408    | [dayuwater](https://github.com/dayuwater)         | timmy940408@hotmail.com       |
 
 ## Setup
 
@@ -130,9 +130,6 @@ Based on the desired immediate behavior, the trajectory planning component will 
 ### Control
 The control component takes trajectory outputs and processes them with a controller algorithm like **PID** or **MPC** to adjust the control inputs for smooth operation of the vehicle. 
 
-
-
-
 ### ROS Architecture
 
 The ROS Architecture consists of different nodes (written in Python or C++) that communicate with each other via ROS messages. The nodes and their communication with each other are depicted in the picture below. The ovally outlined text boxes inside rectangular boxes represent the ROS nodes while the simple rectangular boxes represent the topics that are subscribed or published to. The direction of the arrows clarifies the respective flow of communication. 
@@ -163,24 +160,44 @@ The structure of the traffic light detector is the same in the way that there is
 The third node written by us is the dbw_node which is responsible for steering the car. It subscribes to a twist controller which outputs throttle, brake and steering values with the help of a PID-controller and Lowpass filter. The dbw node directly publishes throttle, brake and steering commands for the car /simulator, in case dbw_enabled is set to true. 
 
 ### Neural Network Design
-The traffic light classification model is based on the pre-trained on the COCO dataset model "faster_rcnn_resnet101_coco" from Tensorflow detection model zoo (https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md). Using the Tensorflow Object Detection API (https://github.com/tensorflow/models/tree/master/research/object_detection), the simulator data model and real data model were trained. Step by Step Tensorflow Object Detection API tutorial (https://medium.com/@WuStangDan/step-by-step-tensorflow-object-detection-api-tutorial-part-1-selecting-a-model-a02b6aabe39e and so on) was a good guide of using the Tensorflow object detection API for traffic light classification. The simulator dataset was from https://drive.google.com/file/d/0Bw5abyXVejvMci03bFRueWVXX1U, and the real dataset was from https://drive.google.com/file/d/0B-Eiyn-CUQtxdUZWMkFfQzdObUE. The models are available at https://drive.google.com/drive/folders/1kDGoZ02HkhLnar40DAGfSBonTTz7LKAg?usp=sharing. The classification output has four categories: Red, Green, Yellow and off. To simplify, the final output will be Red or Non-Red, that is only the Red will be classified as TrafficLight.RED, and the other cases will be classified as TrafficLight.GREEN.
 
-examples of simulator testing results:
+#### Model
+The traffic light classification model is based on the pre-trained on the COCO dataset model "faster_rcnn_resnet101_coco" from [Tensorflow detection model zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md). Using the [Tensorflow Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection), the simulator data model and real data model were trained. 
+
+The models are available in the `ros/src/tl_detector/light_classification/train_model` directory or [here](https://drive.google.com/drive/folders/1kDGoZ02HkhLnar40DAGfSBonTTz7LKAg?usp=sharing). 
+
+#### Dataset
+Step-by-step [Tensorflow Object Detection API tutorial](https://medium.com/@WuStangDan/step-by-step-tensorflow-object-detection-api-tutorial-part-1-selecting-a-model-a02b6aabe39e and so on) was a good guide of using the Tensorflow object detection API for traffic light classification. 
+
+The simulator dataset was from [here](https://drive.google.com/file/d/0Bw5abyXVejvMci03bFRueWVXX1U), and the real dataset was from [here](https://drive.google.com/file/d/0B-Eiyn-CUQtxdUZWMkFfQzdObUE).
+
+#### Classification
+The classification output has four categories: Red, Green, Yellow and off. To simplify, the final output will be Red or Non-Red, that is only the Red will be classified as `TrafficLight.RED`, and the other cases will be classified as `TrafficLight.GREEN`.
+
+#### Examples of Simulator Testing Results:
 
 ![sim_red](https://user-images.githubusercontent.com/12635332/39411764-80e4135a-4bc5-11e8-90de-be830ed9ffcb.png)
 ![sim_green](https://user-images.githubusercontent.com/12635332/39411770-96841c50-4bc5-11e8-8ffb-bd41fb549881.png)
 ![sim-yellow](https://user-images.githubusercontent.com/12635332/39411774-9f08b6c4-4bc5-11e8-8921-3fefcad68e04.png)
 ![sim_none](https://user-images.githubusercontent.com/12635332/39411776-a7a32d78-4bc5-11e8-8034-bbc0066d8b30.png)
 
-examples of real testing results:
+#### Examples of Real Testing Results:
 
 ![real_red](https://user-images.githubusercontent.com/12635332/39411790-e24bf022-4bc5-11e8-95b2-55a7fd07ddf5.png)
 ![real_green](https://user-images.githubusercontent.com/12635332/39411788-d874bbb0-4bc5-11e8-866f-1496f7f47596.png)
 ![real_yellow](https://user-images.githubusercontent.com/12635332/39412245-4e0ad37a-4bce-11e8-9312-7f727d085676.png)
 ![real_none](https://user-images.githubusercontent.com/12635332/39412259-8b125892-4bce-11e8-9e59-64a689a7eb99.png)
 
-## Testing
-
-
-
 ## Results
+
+After getting it working, the walkthrough videos were posted to the Udacity project page.  Since they had a much more elegant approach to implementing the nodes, there was a re-write effort to conform to the walkthrough approach.
+
+[Here][video2] is a sample video of the test track running.
+
+One of the hardest tasks for this project was getting the environment setup. Apple products are essentially not supported and any computer without a very powerful GPU cannot run the network while the simulator is running.
+
+It is also not exactly clear how the test lot should be used in finishing up the project.  The test track is straightforward and immediately usable, but the test lot is troublesome and quirky.
+
+Overall, this was a challenging and rewarding project, both technically and socially.  The use of ROS and having a small team work on the same project presented unique opportunities for learning and growth.
+
+   

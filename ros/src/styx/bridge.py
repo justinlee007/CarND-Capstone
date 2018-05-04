@@ -18,7 +18,7 @@ from std_msgs.msg import Header
 from styx_msgs.msg import TrafficLight, TrafficLightArray, Lane
 
 # throttle the number of images published for under-powered rigs
-IMAGE_THROTTLE_FACTOR = 5
+IMAGE_THROTTLE_FACTOR = 2
 TYPE = {
     'bool': Bool,
     'float': Float,
